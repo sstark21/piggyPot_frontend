@@ -2,30 +2,25 @@
 
 import { appConfig } from "@/config";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { base } from "viem/chains";
 
 export function PrivyProviderComponent({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Check if we have the required configuration
-  if (!appConfig.privy.appId) {
-    console.error(
-      "PRIVY_APP_ID is not set. Please set NEXT_PUBLIC_PRIVY_APP_ID in your environment variables."
-    );
-    return <div>Configuration error: PRIVY_APP_ID not set</div>;
-  }
-
   return (
     <PrivyProvider
       appId={appConfig.privy.appId}
+      clientId={appConfig.privy.clientId} // <--- to avoid cors issues on localhost
       config={{
-        // Create embedded wallets for users who don't have a wallet
+        defaultChain: appConfig.chain,
         embeddedWallets: {
           ethereum: {
             createOnLogin: "users-without-wallets",
           },
         },
+        supportedChains: [base],
       }}
     >
       {children}

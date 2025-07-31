@@ -12,18 +12,7 @@ export function Provider(props: { children: React.ReactNode }) {
       }
     return (
         <ChakraProvider value={defaultSystem}>
-            <PrivyProvider
-                appId={privyAppId}
-                config={{
-                    embeddedWallets: {
-                        ethereum: {
-                            createOnLogin: 'users-without-wallets',
-                        },
-                    },
-                }}
-            >
                 {props.children}
-            </PrivyProvider>
         </ChakraProvider>
     );
 }

@@ -1,19 +1,24 @@
-import { appConfig } from "@/config";
-import { buildQueryURL } from "@/utils/1inch/buildQuery";
-
 export async function call1inchAPI<T>(
   endpointPath: string,
   queryParams: Record<string, string>
 ): Promise<T> {
-  const url = buildQueryURL(endpointPath, queryParams);
+  // Use the Next.js API proxy instead of calling 1inch directly
+  const proxyUrl = new URL("/api/1inch", window.location.origin);
+  proxyUrl.searchParams.set("endpoint", endpointPath);
 
-  const response = await fetch(url, {
+  // Add all query parameters to the proxy URL
+  Object.entries(queryParams).forEach(([key, value]) => {
+    proxyUrl.searchParams.set(key, value);
+  });
+
+  const response = await fetch(proxyUrl.toString(), {
     method: "GET",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${appConfig.oneInch.apiKey}`,
     },
   });
+
+  console.log("response in 1inch allowance:", response);
 
   if (!response.ok) {
     const body = await response.text();

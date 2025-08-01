@@ -2,24 +2,37 @@
 
 import styles from "./page.module.css";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { Button } from "@chakra-ui/react";
+import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
+import { Button, Flex, Text } from "@chakra-ui/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
   const { login, ready, authenticated, user, logout } = usePrivy();
   const wallets = useWallets();
+  const router = useRouter();
 
   console.log("wallets:", wallets);
-
   console.log("user:", user);
 
-  console.log("authenticated:", authenticated);
+  useEffect(() => {
+    if (ready && authenticated) {
+      router.push("/dashboard");
+    }
+  }, [ready, authenticated, router]);
 
-  console.log("ready:", ready);
+  if (!ready) {
+    return (
+      <Flex>
+        <Text>Loading...</Text>;
+      </Flex>
+    );
+  }
 
   return (
     <div className={styles.page}>
-      {user?.wallet?.address?.toString() || "No wallet connected"}
-      <Button onClick={() => login()}>Connect Wallet</Button>;
+      <Text>Welcome to the app</Text>
+      <Button onClick={() => login()}>Login to account</Button>
     </div>
   );
 }

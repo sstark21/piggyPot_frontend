@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { AllowanceResponse, ApproveTransactionResponse } from "@/types/1inch";
 import { call1inchAPI } from "@/libs/1inch/callApi";
+import { formatUnits } from "ethers";
 
 interface UseApproveState {
   isLoading: boolean;
@@ -12,7 +13,8 @@ interface UseApproveState {
 interface UseApproveReturn extends UseApproveState {
   checkAllowance: (
     tokenAddress: string,
-    walletAddress: string
+    walletAddress: string,
+    expectedAllowance: bigint
   ) => Promise<bigint>;
   approveIfNeeded: (
     tokenAddress: string,
@@ -45,7 +47,11 @@ export function useApprove(): UseApproveReturn {
   }, []);
 
   const checkAllowance = useCallback(
-    async (tokenAddress: string, walletAddress: string): Promise<bigint> => {
+    async (
+      tokenAddress: string,
+      walletAddress: string,
+      expectedAllowance: bigint
+    ): Promise<bigint> => {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
@@ -60,13 +66,13 @@ export function useApprove(): UseApproveReturn {
         );
 
         const allowance = BigInt(allowanceRes.allowance);
-        console.log("Allowance:", allowance.toString());
+        console.log("Allowance in ETH:", formatUnits(allowance, 18));
 
         setState((prev) => ({
           ...prev,
           isLoading: false,
           allowance,
-          isApproved: allowance > BigInt(0),
+          isApproved: allowance >= expectedAllowance,
         }));
 
         return allowance;
@@ -88,7 +94,7 @@ export function useApprove(): UseApproveReturn {
     async (
       tokenAddress: string,
       walletAddress: string,
-      requiredAmount: bigint,
+      expectedAllowance: bigint,
       sendTransaction: (tx: {
         to: string;
         data: string;
@@ -98,25 +104,13 @@ export function useApprove(): UseApproveReturn {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const allowance = await checkAllowance(tokenAddress, walletAddress);
-
-        if (allowance >= requiredAmount) {
-          console.log("Allowance is sufficient for the swap.");
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            isApproved: true,
-          }));
-          return;
-        }
-
         console.log("Insufficient allowance. Creating approval transaction...");
 
         const approveTx = await call1inchAPI<ApproveTransactionResponse>(
           "/approve/transaction",
           {
             tokenAddress: tokenAddress,
-            amount: requiredAmount.toString(),
+            amount: expectedAllowance.toString(),
           }
         );
 
@@ -134,13 +128,17 @@ export function useApprove(): UseApproveReturn {
         await new Promise((res) => setTimeout(res, 10000));
 
         // Re-check allowance after approval
-        const newAllowance = await checkAllowance(tokenAddress, walletAddress);
+        const newAllowance = await checkAllowance(
+          tokenAddress,
+          walletAddress,
+          expectedAllowance
+        );
 
         setState((prev) => ({
           ...prev,
           isLoading: false,
           allowance: newAllowance,
-          isApproved: newAllowance >= requiredAmount,
+          isApproved: newAllowance >= expectedAllowance,
         }));
       } catch (error) {
         const errorMessage =

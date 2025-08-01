@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Provider } from '@/components/ui/provider';
-import Header from '@/components/ui/header';
+import { ChakraCustomProvider } from '@/components/providers/chakraProvider';
+import Header from '@/components/layouts/header';
 
-import { PrivyProviderComponent } from '@/components/ui/privyProvider';
+import { PrivyProviderComponent } from '@/components/providers/privyProvider';
 
 const inter = Inter({
     variable: '--font-inter',
@@ -24,12 +24,12 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={`${inter.variable}`}>
-                <Provider>
+                <ChakraCustomProvider>
                     <PrivyProviderComponent>
                         <Header />
                         {children}
                     </PrivyProviderComponent>
-                </Provider>
+                </ChakraCustomProvider>
             </body>
         </html>
     );

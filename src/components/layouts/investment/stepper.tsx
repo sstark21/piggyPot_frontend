@@ -1,12 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Container,
-  Flex,
-  Text,
-  Button,
-  VStack,
-  HStack,
-} from "@chakra-ui/react";
+import { Container, Flex, Button, VStack, HStack } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { InvestmentTypes } from "./investmentTypes";
@@ -14,8 +7,9 @@ import { InvestmentAmount } from "./investmentAmount";
 import { InvestmentSummary } from "./investmentSummary";
 
 export const InvestmentStepper = () => {
-  const { user, authenticated, ready } = usePrivy();
+  const { authenticated, ready } = usePrivy();
   const [amountToInvest, setAmountToInvest] = useState<number>(0);
+  const [isAmountExceeded, setIsAmountExceeded] = useState<boolean>(false);
   const [investmentTypeShare, setInvestmentTypeShare] = useState<{
     risky: number;
     conservative: number;
@@ -44,6 +38,7 @@ export const InvestmentStepper = () => {
       <InvestmentAmount
         amount={amountToInvest}
         onAmountChange={setAmountToInvest}
+        setIsAmountExceeded={setIsAmountExceeded}
       />
     ),
     1: (

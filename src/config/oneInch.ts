@@ -2,6 +2,7 @@ import { base } from "viem/chains";
 
 const ONE_INCH_API_KEY =
   process.env.NEXT_PUBLIC_ONE_INCH_API_KEY || process.env.ONE_INCH_API_KEY;
+
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || process.env.RPC_URL;
 
 if (!ONE_INCH_API_KEY || !RPC_URL) {

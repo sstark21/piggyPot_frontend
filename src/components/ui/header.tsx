@@ -2,8 +2,12 @@
 
 import { Box, Button, Flex, Image, IconButton, Text } from '@chakra-ui/react';
 import { PiUserBold } from 'react-icons/pi';
+import { useUser } from '@/hooks/useUser';
+import { formatUSD } from '@/libs';
 
 const Header = () => {
+    const { user } = useUser();
+    console.log('!!', user);
     return (
         <Box
             as="header"
@@ -43,6 +47,15 @@ const Header = () => {
                     alignItems="center"
                     justifyContent="center"
                 >
+                    <Text
+                        fontSize="20px"
+                        fontWeight="bold"
+                        fontFamily="Inter"
+                        px="12px"
+                    >
+                        {formatUSD(user?.balance.balanceUSD || 0)}
+                    </Text>
+
                     <Button
                         borderRadius="12px"
                         size="md"

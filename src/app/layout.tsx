@@ -4,8 +4,6 @@ import './globals.css';
 import { Provider } from '@/components/ui/provider';
 import Header from '@/components/ui/header';
 
-import { appConfig } from '@/config';
-import { PrivyProvider } from '@privy-io/react-auth';
 import { PrivyProviderComponent } from '@/components/ui/privyProvider';
 
 const inter = Inter({

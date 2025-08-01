@@ -1,92 +1,112 @@
-import { useState, useCallback } from "react";
-import { call1inchAPI } from "@/libs/1inch/callApi";
+import { useState, useCallback } from 'react';
+import { call1inchAPI } from '@/libs/1inch/callApi';
+
+const USE_MOCK_BALANCE = true;
 
 interface PortfolioResponse {
-  result: Array<{
-    address: string;
-    value_usd: number;
-  }>;
-  meta: Record<string, unknown>;
+    result: Array<{
+        address: string;
+        value_usd: number;
+    }>;
+    meta: Record<string, unknown>;
 }
 
 interface UseBalanceState {
-  isLoading: boolean;
-  error: string | null;
-  balanceUSD: number | null;
+    isLoading: boolean;
+    error: string | null;
+    balanceUSD: number | null;
 }
 
 interface UseBalanceReturn extends UseBalanceState {
-  fetchBalance: (walletAddress: string) => Promise<number>;
-  reset: () => void;
+    fetchBalance: (walletAddress: string) => Promise<number>;
+    reset: () => void;
 }
 
 export function useBalance(): UseBalanceReturn {
-  const [state, setState] = useState<UseBalanceState>({
-    isLoading: false,
-    error: null,
-    balanceUSD: null,
-  });
-
-  const reset = useCallback(() => {
-    setState({
-      isLoading: false,
-      error: null,
-      balanceUSD: null,
+    const [state, setState] = useState<UseBalanceState>({
+        isLoading: false,
+        error: null,
+        balanceUSD: null,
     });
-  }, []);
 
-  const fetchBalance = useCallback(
-    async (walletAddress: string): Promise<number> => {
-      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    const reset = useCallback(() => {
+        setState({
+            isLoading: false,
+            error: null,
+            balanceUSD: null,
+        });
+    }, []);
 
-      try {
-        console.log("Fetching wallet balance...");
+    const fetchBalance = useCallback(
+        async (walletAddress: string): Promise<number> => {
+            setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-        const balanceRes = await call1inchAPI<PortfolioResponse>(
-          "/portfolio/portfolio/v4/general/current_value",
-          {
-            addresses: walletAddress,
-          }
-        );
+            try {
+                if (USE_MOCK_BALANCE) {
+                    // Mock data
+                    console.log('Using mock balance data');
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
 
-        console.log("Balance response:", balanceRes);
+                    const mockBalance = 12345.67; // Mock balance value
+                    setState(prev => ({
+                        ...prev,
+                        isLoading: false,
+                        balanceUSD: mockBalance,
+                    }));
 
-        // Find the balance for the specific wallet address
-        const walletBalance = balanceRes.result.find(
-          (item) => item.address.toLowerCase() === walletAddress.toLowerCase()
-        );
+                    return mockBalance;
+                }
+                console.log('Fetching wallet balance...');
 
-        if (!walletBalance) {
-          throw new Error("Wallet balance not found");
-        }
+                const balanceRes = await call1inchAPI<PortfolioResponse>(
+                    '/portfolio/portfolio/v4/general/current_value',
+                    {
+                        addresses: walletAddress,
+                    }
+                );
 
-        const balanceUSD = walletBalance.value_usd;
-        console.log("Balance USD:", balanceUSD);
+                console.log('Balance response:', balanceRes);
 
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          balanceUSD,
-        }));
+                // Find the balance for the specific wallet address
+                const walletBalance = balanceRes.result.find(
+                    item =>
+                        item.address.toLowerCase() ===
+                        walletAddress.toLowerCase()
+                );
 
-        return balanceUSD;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to fetch balance";
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: errorMessage,
-        }));
-        throw error;
-      }
-    },
-    []
-  );
+                if (!walletBalance) {
+                    throw new Error('Wallet balance not found');
+                }
 
-  return {
-    ...state,
-    fetchBalance,
-    reset,
-  };
+                const balanceUSD = walletBalance.value_usd;
+                console.log('Balance USD:', balanceUSD);
+
+                setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    balanceUSD,
+                }));
+
+                return balanceUSD;
+            } catch (error) {
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to fetch balance';
+                setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    error: errorMessage,
+                }));
+                throw error;
+            }
+        },
+        []
+    );
+
+    return {
+        ...state,
+        fetchBalance,
+        reset,
+    };
 }

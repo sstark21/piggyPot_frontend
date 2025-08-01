@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Provider } from "@/components/ui/provider";
-import { appConfig } from "@/config";
-import { PrivyProvider } from "@privy-io/react-auth";
-import { PrivyProviderComponent } from "@/components/ui/privyProvider";
+import { ChakraCustomProvider } from "@/components/providers/chakraProvider";
+import { PrivyProviderComponent } from "@/components/providers/privyProvider";
+import { QueryProvider } from "@/components/providers/queryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,9 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Provider>
-          <PrivyProviderComponent>{children}</PrivyProviderComponent>
-        </Provider>
+        <PrivyProviderComponent>
+          <QueryProvider>
+            <ChakraCustomProvider>{children}</ChakraCustomProvider>
+          </QueryProvider>
+        </PrivyProviderComponent>
       </body>
     </html>
   );

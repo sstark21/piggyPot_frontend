@@ -1,12 +1,10 @@
-"use client";
 import { usePrivy, Wallet } from "@privy-io/react-auth";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button, Container, Flex, Text } from "@chakra-ui/react";
 import { useBalance } from "@/hooks/useBalance";
-import { InvestmentInfoLayout } from "@/components/layouts/dashboard/investmentInfo";
+import { Button, Flex, Text } from "@chakra-ui/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-export default function DashboardPage() {
+export const InvestmentInfoLayout = () => {
   const { user, authenticated, ready } = usePrivy();
   const router = useRouter();
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -39,7 +37,6 @@ export default function DashboardPage() {
 
   console.log("user:", user);
 
-  // Show loading while checking authentication
   if (!ready) {
     return (
       <Flex
@@ -68,10 +65,28 @@ export default function DashboardPage() {
       </Flex>
     );
   }
-
   return (
-    <Container>
-      <InvestmentInfoLayout />
-    </Container>
+    <Flex
+      flexDirection="column"
+      gap={4}
+      alignItems="center"
+      justifyContent="center"
+      h="100vh"
+    >
+      <Text>Dashboard</Text>
+      {user ? (
+        <Text>Wallet: {wallet?.address}</Text>
+      ) : (
+        <Text>Loading profile...</Text>
+      )}
+      {isBalanceLoading ? (
+        <Text>Loading balance...</Text>
+      ) : (
+        <Text>Balance in USD: {balanceUSD}</Text>
+      )}
+      <Button disabled={!balanceUSD} onClick={() => router.push("/invest")}>
+        Invest
+      </Button>
+    </Flex>
   );
-}
+};

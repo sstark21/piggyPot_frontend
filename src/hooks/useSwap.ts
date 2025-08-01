@@ -1,24 +1,9 @@
 import { useState, useCallback } from "react";
-import { TxResponse } from "@/types/1inch";
+import { TxResponse } from "@/types/1inch/swap";
 import { call1inchAPI } from "@/libs/1inch/callApi";
 import { useSendTransaction } from "@privy-io/react-auth";
-
-interface UseSwapState {
-  isLoading: boolean;
-  error: string | null;
-  txHash: string | null;
-  isSuccess: boolean;
-}
-
-interface UseSwapReturn extends UseSwapState {
-  swapTokens: (
-    sourceToken: string,
-    destinationToken: string,
-    amount: string,
-    walletAddress: string
-  ) => Promise<void>;
-  reset: () => void;
-}
+import { USDC_ADDRESS } from "@/config/constants";
+import { UseSwapReturn, UseSwapState } from "@/types/1inch/swap";
 
 export function useSwap(): UseSwapReturn {
   const { sendTransaction } = useSendTransaction();
@@ -40,7 +25,6 @@ export function useSwap(): UseSwapReturn {
 
   const swapTokens = useCallback(
     async (
-      sourceToken: string,
       destinationToken: string,
       amount: string,
       walletAddress: string
@@ -51,10 +35,7 @@ export function useSwap(): UseSwapReturn {
         console.log("Creating swap transaction...");
 
         const swapParams = {
-          src:
-            sourceToken === "USDC"
-              ? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
-              : sourceToken,
+          src: USDC_ADDRESS,
           dst: destinationToken,
           amount: amount,
           from: walletAddress,
@@ -72,7 +53,6 @@ export function useSwap(): UseSwapReturn {
 
         console.log("Swap transaction details:", swapTx);
 
-        // Use Privy's sendTransaction
         const txHash = await sendTransaction({
           to: swapTx.tx.to,
           data: swapTx.tx.data,

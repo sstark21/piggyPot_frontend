@@ -1,16 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/libs/api/client";
-import { ApiError } from "@/libs/api/client";
+import { ApiError } from "@/types/backend/errors";
 import { useState } from "react";
-
-interface UpdateOperationData {
-  userIdRaw: string;
-  data: {
-    operationId: string;
-    status: string;
-    recommendedPools: unknown[];
-  };
-}
+import { UpdateOperationData } from "@/types/backend/operations";
 
 export const useUpdateOperation = () => {
   const [isLoading, setIsLoading] = useState(false);

@@ -3,6 +3,7 @@ import { usePoolsRecommendations } from "@/hooks/usePoolsRecommendations";
 import { useSwap } from "@/hooks/useSwap";
 import { useApprove } from "@/hooks/useApprove";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
+import { USDC_DECIMALS } from "@/config/constants";
 
 interface InvestmentWorkflowProps {
   userIdRaw: string;
@@ -14,7 +15,6 @@ interface InvestmentWorkflowProps {
   onError: (error: string) => void;
 }
 
-// Helper function to convert amount to bigint with decimals
 const convertToBigInt = (amount: number, decimals: number): bigint => {
   return BigInt(Math.floor(amount * Math.pow(10, decimals)));
 };
@@ -28,7 +28,6 @@ export function InvestmentWorkflow({
   onComplete,
   onError,
 }: InvestmentWorkflowProps) {
-  const [currentStep, setCurrentStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recommendationsReady, setRecommendationsReady] = useState(false);
   const { user } = usePrivy();
@@ -51,11 +50,10 @@ export function InvestmentWorkflow({
   console.log("isRecommendationsFinished", isRecommendationsFinished);
   console.log("recommendationsError", recommendationsError);
 
-  const { swapTokens, error } = useSwap();
+  const { swapTokens } = useSwap();
   const { checkAllowance, approveIfNeeded } = useApprove();
   const { sendTransaction: privySendTransaction } = useSendTransaction();
 
-  // Wrapper function to match the expected signature
   const sendTransaction = async (tx: {
     to: string;
     data: string;
@@ -165,11 +163,9 @@ export function InvestmentWorkflow({
         if (totalAmount > 0) {
           onProgress("Checking USDC allowance...", 20);
 
-          const usdcDecimals = 6; // USDC has 6 decimals
-          const totalAmountBigInt = convertToBigInt(totalAmount, usdcDecimals);
+          const totalAmountBigInt = convertToBigInt(totalAmount, USDC_DECIMALS);
 
           const allowance = await checkAllowance(
-            "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC contract
             walletAddress,
             totalAmountBigInt
           );
@@ -177,7 +173,6 @@ export function InvestmentWorkflow({
           if (allowance < totalAmountBigInt) {
             onProgress("Approving USDC...", 22);
             await approveIfNeeded(
-              "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC contract
               walletAddress,
               totalAmountBigInt,
               sendTransaction
@@ -185,7 +180,6 @@ export function InvestmentWorkflow({
           }
         }
 
-        // Process risky pools (only if they exist)
         if (riskyPools.length > 0) {
           for (let i = 0; i < riskyPools.length; i++) {
             const pool = riskyPools[i] as {
@@ -201,36 +195,30 @@ export function InvestmentWorkflow({
               25 + (i * 25) / riskyPools.length
             );
 
-            // Calculate swap amounts (equal proportions, token0 gets more if needed)
             const token0Amount = Math.ceil(poolAmount / 2);
             const token1Amount = poolAmount - token0Amount;
 
-            // Convert USDC amounts to bigint with USDC decimals (6)
             const token0AmountBigInt = convertToBigInt(token0Amount, 6);
             const token1AmountBigInt = convertToBigInt(token1Amount, 6);
 
-            // Swap USDC to token0
             if (token0Amount > 0) {
               onProgress(
                 `Swapping USDC to ${pool.token0}...`,
                 25 + (i * 25) / riskyPools.length
               );
               await swapTokens(
-                "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC
                 pool.token0,
                 token0AmountBigInt.toString(),
                 walletAddress
               );
             }
 
-            // Swap USDC to token1
             if (token1Amount > 0) {
               onProgress(
                 `Swapping USDC to ${pool.token1}...`,
                 25 + (i * 25) / riskyPools.length
               );
               await swapTokens(
-                "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC
                 pool.token1,
                 token1AmountBigInt.toString(),
                 walletAddress
@@ -239,7 +227,6 @@ export function InvestmentWorkflow({
           }
         }
 
-        // Process conservative pools (only if they exist)
         if (conservativePools.length > 0) {
           for (let i = 0; i < conservativePools.length; i++) {
             const pool = conservativePools[i] as {
@@ -257,22 +244,18 @@ export function InvestmentWorkflow({
               50 + (i * 25) / conservativePools.length
             );
 
-            // Calculate swap amounts (equal proportions, token0 gets more if needed)
             const token0Amount = Math.ceil(poolAmount / 2);
             const token1Amount = poolAmount - token0Amount;
 
-            // Convert USDC amounts to bigint with USDC decimals (6)
             const token0AmountBigInt = convertToBigInt(token0Amount, 6);
             const token1AmountBigInt = convertToBigInt(token1Amount, 6);
 
-            // Swap USDC to token0
             if (token0Amount > 0) {
               onProgress(
                 `Swapping USDC to ${pool.token0}...`,
                 50 + (i * 25) / conservativePools.length
               );
               await swapTokens(
-                "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC
                 pool.token0,
                 token0AmountBigInt.toString(),
                 walletAddress
@@ -286,7 +269,6 @@ export function InvestmentWorkflow({
                 50 + (i * 25) / conservativePools.length
               );
               await swapTokens(
-                "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC
                 pool.token1,
                 token1AmountBigInt.toString(),
                 walletAddress

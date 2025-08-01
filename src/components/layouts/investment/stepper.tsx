@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Container, Flex, Button, VStack, HStack } from "@chakra-ui/react";
+import {
+  Container,
+  Flex,
+  Button,
+  VStack,
+  HStack,
+  Text,
+} from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { InvestmentTypes } from "./investmentTypes";
@@ -126,6 +133,11 @@ export const InvestmentStepper = () => {
         <Flex minH="400px" align="center" justify="center">
           {stepsMapper[step]}
         </Flex>
+        {isAmountExceeded && (
+          <Text color="red.500" fontSize="sm" mt={2}>
+            ⚠️ Amount exceeds your balance. Please enter a smaller amount.
+          </Text>
+        )}
       </VStack>
     </Container>
   );

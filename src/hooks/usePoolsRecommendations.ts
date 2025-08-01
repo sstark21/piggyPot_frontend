@@ -1,8 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
-import { apiClient } from "@/libs/api/client";
-import { RecommendationResponse, ApiError } from "@/libs/api/client";
 import { useState } from "react";
 import { poolsRecommendationsMock } from "@/mocks/recommendations";
+import { RecommendationResponse } from "@/types/backend/pools";
+import { ApiError } from "@/types/backend/errors";
 
 export const usePoolsRecommendations = (
   userIdRaw: string,

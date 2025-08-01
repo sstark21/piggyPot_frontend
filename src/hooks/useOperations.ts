@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/libs/api/client";
-import { HistoryResponse, ApiError } from "@/libs/api/client";
 import { useState, useEffect } from "react";
+import { HistoryResponse } from "@/types/backend/operations";
+import { ApiError } from "@/types/backend/errors";
 
 export const useOperations = (userIdRaw: string) => {
   const [isLoading, setIsLoading] = useState(false);

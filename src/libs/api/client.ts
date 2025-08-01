@@ -4,10 +4,7 @@ import {
   UseQueryOptions,
   UseMutationOptions,
 } from "@tanstack/react-query";
-
-// Base API configuration
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+import { appConfig } from "@/config";
 
 // Types for API responses
 export interface ApiResponse<T = unknown> {
@@ -25,6 +22,10 @@ export interface ApiError {
 export interface RecommendedPool {
   poolId: string;
   feeTier: string;
+  token0: string;
+  token1: string;
+  token0Decimals: number;
+  token1Decimals: number;
 }
 
 export interface Operation {
@@ -46,7 +47,17 @@ export interface Operation {
 export interface RecommendationResponse {
   success: boolean;
   data: {
-    operation: Operation;
+    operationId: string;
+    recommendations: {
+      poolId: string;
+      feeTier: string;
+      token0: string;
+      token1: string;
+      isStablecoinPool: boolean;
+      token0Decimals: number;
+      token1Decimals: number;
+    }[];
+    message: string;
   };
 }
 
@@ -107,6 +118,14 @@ class ApiClient {
     });
   }
 
+  // POST request
+  async post<T>(endpoint: string, data?: Record<string, unknown>): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "POST",
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
   // PUT request
   async put<T>(endpoint: string, data?: Record<string, unknown>): Promise<T> {
     return this.request<T>(endpoint, {
@@ -117,34 +136,4 @@ class ApiClient {
 }
 
 // Create API client instance
-export const apiClient = new ApiClient(API_BASE_URL);
-
-// React Query hooks for the three specific endpoints
-export const usePoolsRecommendations = () => {
-  return useQuery<RecommendationResponse, ApiError>({
-    queryKey: ["pools", "recommendations"],
-    queryFn: () =>
-      apiClient.get<RecommendationResponse>("/pools/recommendations"),
-  });
-};
-
-export const useOperations = (userIdRaw: string) => {
-  return useQuery<HistoryResponse, ApiError>({
-    queryKey: ["operations", userIdRaw],
-    queryFn: () => apiClient.get<HistoryResponse>("/operations", { userIdRaw }),
-  });
-};
-
-export const useUpdateOperation = () => {
-  return useMutation<
-    ApiResponse<unknown>,
-    ApiError,
-    { userIdRaw: string; data: Record<string, unknown> }
-  >({
-    mutationFn: ({ userIdRaw, data }) =>
-      apiClient.put<ApiResponse<unknown>>(
-        `/operations/update?userIdRaw=${userIdRaw}`,
-        data
-      ),
-  });
-};
+export const apiClient = new ApiClient(appConfig.backend.baseUrl);

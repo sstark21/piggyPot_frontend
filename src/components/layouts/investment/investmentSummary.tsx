@@ -1,17 +1,63 @@
-import { VStack, HStack, Text, Box } from "@chakra-ui/react";
+import { VStack, HStack, Text, Box, Button } from "@chakra-ui/react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useState } from "react";
+import { InvestmentWorkflow } from "./investmentWorkflow";
+import { defineIssue } from "@/utils/issuesProcessing";
 
 export const InvestmentSummary = ({
   amountToInvest,
   investmentTypeShare,
+  isProcessing,
+  setIsProcessing,
 }: {
-  amountToInvest: number | null;
+  amountToInvest: number;
   investmentTypeShare: {
     risky: number;
     conservative: number;
     riskyAmount: number;
     conservativeAmount: number;
   };
+  isProcessing: boolean;
+  setIsProcessing: (processing: boolean) => void;
 }) => {
+  const { user } = usePrivy();
+  const [currentStep, setCurrentStep] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  // Calculate investment amounts
+  const riskyAmount = (amountToInvest * investmentTypeShare.risky) / 100;
+  const conservativeAmount =
+    (amountToInvest * investmentTypeShare.conservative) / 100;
+
+  const handleStartInvestment = () => {
+    if (!user?.id) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+    setIsCompleted(false);
+    setProgress(0);
+  };
+
+  const handleProgress = (step: string, progressValue: number) => {
+    setCurrentStep(step);
+    setProgress(progressValue);
+  };
+
+  const handleComplete = () => {
+    setIsCompleted(true);
+    setIsProcessing(false);
+  };
+
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+    setIsProcessing(false);
+  };
+
   if (!amountToInvest) {
     return (
       <VStack gap={4} alignItems="center">
@@ -108,8 +154,65 @@ export const InvestmentSummary = ({
             </VStack>
           </Box>
 
+          {!isProcessing ? (
+            <Button
+              onClick={handleStartInvestment}
+              colorScheme="green"
+              size="lg"
+              disabled={!user?.id}
+            >
+              Start Investment
+            </Button>
+          ) : (
+            <VStack gap={4} w="full">
+              <Text fontSize="md" textAlign="center">
+                {currentStep}
+              </Text>
+
+              <Box w="full" bg="gray.200" borderRadius="md" h="8px">
+                <Box
+                  bg="green.500"
+                  h="full"
+                  borderRadius="md"
+                  w={`${progress}%`}
+                  transition="width 0.3s ease"
+                />
+              </Box>
+
+              <Text fontSize="sm" color="gray.600">
+                {Math.round(progress)}% complete
+              </Text>
+            </VStack>
+          )}
+
           <Box h="1px" bg="gray.200" />
         </VStack>
+        {/* Error handling */}
+        {error && (
+          <Text color="red.500" fontSize="sm" textAlign="center">
+            Error: {defineIssue(error)}
+          </Text>
+        )}
+
+        {/* Success message */}
+        {isCompleted && (
+          <Text color="green.500" fontSize="sm" textAlign="center">
+            Investment completed successfully!
+          </Text>
+        )}
+
+        {/* Workflow component - only render when processing */}
+        {isProcessing && user?.id && (
+          <InvestmentWorkflow
+            userIdRaw={user.id}
+            amount={amountToInvest}
+            riskyAmount={riskyAmount}
+            conservativeAmount={conservativeAmount}
+            onProgress={handleProgress}
+            onComplete={handleComplete}
+            onError={handleError}
+          />
+        )}
       </Box>
     </VStack>
   );

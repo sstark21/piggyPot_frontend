@@ -58,7 +58,7 @@ export function useApprove(): UseApproveReturn {
         console.log("Checking token allowance...");
 
         const allowanceRes = await call1inchAPI<AllowanceResponse>(
-          "/approve/allowance",
+          "/swap/v6.1/8453/approve/allowance",
           {
             tokenAddress: tokenAddress,
             walletAddress: walletAddress,
@@ -107,7 +107,7 @@ export function useApprove(): UseApproveReturn {
         console.log("Insufficient allowance. Creating approval transaction...");
 
         const approveTx = await call1inchAPI<ApproveTransactionResponse>(
-          "/approve/transaction",
+          "/swap/v6.1/8453/approve/transaction",
           {
             tokenAddress: tokenAddress,
             amount: expectedAllowance.toString(),

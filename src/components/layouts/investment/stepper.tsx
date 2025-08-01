@@ -12,11 +12,10 @@ import { usePrivy } from "@privy-io/react-auth";
 import { InvestmentTypes } from "./investmentTypes";
 import { InvestmentAmount } from "./investmentAmount";
 import { InvestmentSummary } from "./investmentSummary";
-import { InvestmentProcessing } from "./investmentProcessing";
 
 export const InvestmentStepper = () => {
   const { user, authenticated, ready } = usePrivy();
-  const [amountToInvest, setAmountToInvest] = useState<number | null>(null);
+  const [amountToInvest, setAmountToInvest] = useState<number>(0);
   const [investmentTypeShare, setInvestmentTypeShare] = useState<{
     risky: number;
     conservative: number;
@@ -58,12 +57,6 @@ export const InvestmentStepper = () => {
       <InvestmentSummary
         amountToInvest={amountToInvest}
         investmentTypeShare={investmentTypeShare}
-      />
-    ),
-    3: (
-      <InvestmentProcessing
-        amount={amountToInvest}
-        shares={investmentTypeShare}
         isProcessing={isProcessing}
         setIsProcessing={setIsProcessing}
       />
@@ -79,9 +72,9 @@ export const InvestmentStepper = () => {
           investmentTypeShare.risky + investmentTypeShare.conservative === 100
         );
       case 2:
-        return true;
+        return amountToInvest && amountToInvest > 0;
       case 3:
-        return false; // Processing step, no navigation
+        return amountToInvest && amountToInvest > 0;
       default:
         return false;
     }
@@ -103,13 +96,6 @@ export const InvestmentStepper = () => {
     router.push("/dashboard");
   };
 
-  const stepTitles = [
-    "Investment Amount",
-    "Asset Allocation",
-    "Summary",
-    "Processing",
-  ];
-
   return (
     <Container maxW="container.md" py={8}>
       <VStack gap={8} alignItems="stretch">
@@ -129,13 +115,15 @@ export const InvestmentStepper = () => {
                 Close
               </Button>
 
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                colorScheme="blue"
-              >
-                {step === 2 ? "Start Investment" : "Next"}
-              </Button>
+              {step < 2 && (
+                <Button
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                  colorScheme="blue"
+                >
+                  Next
+                </Button>
+              )}
             </HStack>
           </HStack>
         )}

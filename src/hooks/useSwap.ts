@@ -51,7 +51,10 @@ export function useSwap(): UseSwapReturn {
         console.log("Creating swap transaction...");
 
         const swapParams = {
-          src: sourceToken,
+          src:
+            sourceToken === "USDC"
+              ? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+              : sourceToken,
           dst: destinationToken,
           amount: amount,
           from: walletAddress,

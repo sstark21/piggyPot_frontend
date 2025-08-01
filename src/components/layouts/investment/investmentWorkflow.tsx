@@ -3,7 +3,8 @@ import { usePoolsRecommendations } from "@/hooks/usePoolsRecommendations";
 import { useSwap } from "@/hooks/useSwap";
 import { useApprove } from "@/hooks/useApprove";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
-import { USDC_DECIMALS } from "@/config/constants";
+import { USDC_ADDRESS, USDC_DECIMALS } from "@/config/constants";
+import { convertWeiToHumanReadable } from "@/utils/converter";
 
 interface InvestmentWorkflowProps {
   userIdRaw: string;
@@ -15,9 +16,9 @@ interface InvestmentWorkflowProps {
   onError: (error: string) => void;
 }
 
-const convertToBigInt = (amount: number, decimals: number): bigint => {
-  return BigInt(Math.floor(amount * Math.pow(10, decimals)));
-};
+// const convertToBigInt = (amount: number, decimals: number): bigint => {
+//   return BigInt(Math.floor(amount * Math.pow(10, decimals)));
+// };
 
 export function InvestmentWorkflow({
   userIdRaw,
@@ -163,9 +164,13 @@ export function InvestmentWorkflow({
         if (totalAmount > 0) {
           onProgress("Checking USDC allowance...", 20);
 
-          const totalAmountBigInt = convertToBigInt(totalAmount, USDC_DECIMALS);
+          const totalAmountBigInt = convertWeiToHumanReadable(
+            totalAmount,
+            USDC_DECIMALS
+          );
 
           const allowance = await checkAllowance(
+            USDC_ADDRESS,
             walletAddress,
             totalAmountBigInt
           );
@@ -173,6 +178,7 @@ export function InvestmentWorkflow({
           if (allowance < totalAmountBigInt) {
             onProgress("Approving USDC...", 22);
             await approveIfNeeded(
+              USDC_ADDRESS,
               walletAddress,
               totalAmountBigInt,
               sendTransaction
@@ -198,8 +204,14 @@ export function InvestmentWorkflow({
             const token0Amount = Math.ceil(poolAmount / 2);
             const token1Amount = poolAmount - token0Amount;
 
-            const token0AmountBigInt = convertToBigInt(token0Amount, 6);
-            const token1AmountBigInt = convertToBigInt(token1Amount, 6);
+            const token0AmountBigInt = convertWeiToHumanReadable(
+              token0Amount,
+              6
+            );
+            const token1AmountBigInt = convertWeiToHumanReadable(
+              token1Amount,
+              6
+            );
 
             if (token0Amount > 0) {
               onProgress(
@@ -247,8 +259,14 @@ export function InvestmentWorkflow({
             const token0Amount = Math.ceil(poolAmount / 2);
             const token1Amount = poolAmount - token0Amount;
 
-            const token0AmountBigInt = convertToBigInt(token0Amount, 6);
-            const token1AmountBigInt = convertToBigInt(token1Amount, 6);
+            const token0AmountBigInt = convertWeiToHumanReadable(
+              token0Amount,
+              6
+            );
+            const token1AmountBigInt = convertWeiToHumanReadable(
+              token1Amount,
+              6
+            );
 
             if (token0Amount > 0) {
               onProgress(

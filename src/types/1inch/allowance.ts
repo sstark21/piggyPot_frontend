@@ -9,10 +9,12 @@ export interface UseApproveState {
 
 export interface UseApproveReturn extends UseApproveState {
   checkAllowance: (
+    addressToApprove: string,
     walletAddress: string,
     expectedAllowance: bigint
   ) => Promise<bigint>;
   approveIfNeeded: (
+    addressToApprove: string,
     walletAddress: string,
     requiredAmount: bigint,
     sendTransaction: (tx: {

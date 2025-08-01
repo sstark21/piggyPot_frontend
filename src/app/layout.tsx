@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Provider } from '@/components/providers/chakraProvider';
+import { ChakraCustomProvider } from '@/components/providers/chakraProvider';
 import Header from '@/components/ui/header';
 
 import { PrivyProviderComponent } from '@/components/providers/privyProvider';
@@ -24,12 +24,12 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={`${inter.variable}`}>
-                <Provider>
+                <ChakraCustomProvider>
                     <PrivyProviderComponent>
                         <Header />
                         {children}
                     </PrivyProviderComponent>
-                </Provider>
+                </ChakraCustomProvider>
             </body>
         </html>
     );

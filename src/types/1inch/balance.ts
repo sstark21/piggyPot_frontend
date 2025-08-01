@@ -1,17 +1,14 @@
-// Response from 1inch balance API
 export interface BalanceResponse {
-    [tokenAddress: string]: string; // token address -> balance in wei
+  [tokenAddress: string]: string;
 }
 
-// Hook state
 export interface UseBalanceState {
-    balanceUSD: number | null;
-    isLoading: boolean;
-    error: string | null;
+  isLoading: boolean;
+  error: string | null;
+  balanceUSD: number | null;
 }
 
-// Hook return type
 export interface UseBalanceReturn extends UseBalanceState {
-    fetchBalance: (walletAddress: string) => Promise<number>;
-    reset: () => void;
+  fetchBalance: (walletAddress: string) => Promise<number>;
+  reset: () => void;
 }

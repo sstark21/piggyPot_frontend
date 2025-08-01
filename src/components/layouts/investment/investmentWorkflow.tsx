@@ -165,9 +165,10 @@ export function InvestmentWorkflow({
           onProgress("Checking USDC allowance...", 20);
 
           const totalAmountBigInt = convertWeiToHumanReadable(
-            totalAmount,
-            USDC_DECIMALS
-          );
+              totalAmount,
+              USDC_DECIMALS,
+              true 
+            ) as bigint
 
           const allowance = await checkAllowance(
             USDC_ADDRESS,

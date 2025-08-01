@@ -1,112 +1,98 @@
-import { useState, useCallback } from 'react';
-import { call1inchAPI } from '@/libs/1inch/callApi';
+import { useState, useCallback } from "react";
+import { call1inchAPI } from "@/libs/1inch/callApi";
+import { USDC_ADDRESS, USDC_DECIMALS } from "@/config/constants";
+import {
+  BalanceResponse,
+  UseBalanceReturn,
+  UseBalanceState,
+} from "@/types/1inch/balance";
 
-const USE_MOCK_BALANCE = true;
+const convertWeiToHumanReadable = (
+  weiAmount: string,
+  decimals: number
+): number => {
+  const weiBigInt = BigInt(weiAmount);
+  const divisor = BigInt(10 ** decimals);
+  const wholePart = weiBigInt / divisor;
+  const remainder = weiBigInt % divisor;
 
-interface PortfolioResponse {
-    result: Array<{
-        address: string;
-        value_usd: number;
-    }>;
-    meta: Record<string, unknown>;
-}
+  const remainderStr = remainder.toString().padStart(decimals, "0");
+  const decimalPart = parseFloat(`0.${remainderStr}`);
 
-interface UseBalanceState {
-    isLoading: boolean;
-    error: string | null;
-    balanceUSD: number | null;
-}
-
-interface UseBalanceReturn extends UseBalanceState {
-    fetchBalance: (walletAddress: string) => Promise<number>;
-    reset: () => void;
-}
+  return Number(wholePart) + decimalPart;
+};
 
 export function useBalance(): UseBalanceReturn {
-    const [state, setState] = useState<UseBalanceState>({
-        isLoading: false,
-        error: null,
-        balanceUSD: null,
+  const [state, setState] = useState<UseBalanceState>({
+    isLoading: false,
+    error: null,
+    balanceUSD: null,
+  });
+
+  const reset = useCallback(() => {
+    setState({
+      isLoading: false,
+      error: null,
+      balanceUSD: null,
     });
+  }, []);
 
-    const reset = useCallback(() => {
-        setState({
-            isLoading: false,
-            error: null,
-            balanceUSD: null,
-        });
-    }, []);
+  const fetchBalance = useCallback(
+    async (walletAddress: string): Promise<number> => {
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-    const fetchBalance = useCallback(
-        async (walletAddress: string): Promise<number> => {
-            setState(prev => ({ ...prev, isLoading: true, error: null }));
+      try {
+        console.log("Fetching wallet balance...");
 
-            try {
-                if (USE_MOCK_BALANCE) {
-                    // Mock data
-                    console.log('Using mock balance data');
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+        // Use the 1inch API to make the request
+        const balanceRes = await call1inchAPI<BalanceResponse>(
+          `/balance/v1.2/8453/balances/${walletAddress}`,
+          {
+            tokens: USDC_ADDRESS, // USDC token
+          }
+        );
 
-                    const mockBalance = 12345.67; // Mock balance value
-                    setState(prev => ({
-                        ...prev,
-                        isLoading: false,
-                        balanceUSD: mockBalance,
-                    }));
+        console.log("Balance response:", balanceRes);
 
-                    return mockBalance;
-                }
-                console.log('Fetching wallet balance...');
+        const usdcBalanceWei = balanceRes[USDC_ADDRESS];
 
-                const balanceRes = await call1inchAPI<PortfolioResponse>(
-                    '/portfolio/portfolio/v4/general/current_value',
-                    {
-                        addresses: walletAddress,
-                    }
-                );
+        if (!usdcBalanceWei) {
+          throw new Error("USDC balance not found");
+        }
 
-                console.log('Balance response:', balanceRes);
+        const balanceInUSDC = convertWeiToHumanReadable(
+          usdcBalanceWei,
+          USDC_DECIMALS
+        );
 
-                // Find the balance for the specific wallet address
-                const walletBalance = balanceRes.result.find(
-                    item =>
-                        item.address.toLowerCase() ===
-                        walletAddress.toLowerCase()
-                );
+        const balanceUSD = balanceInUSDC;
 
-                if (!walletBalance) {
-                    throw new Error('Wallet balance not found');
-                }
+        console.log("Balance in USDC:", balanceInUSDC);
 
-                const balanceUSD = walletBalance.value_usd;
-                console.log('Balance USD:', balanceUSD);
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          balanceUSD,
+        }));
 
-                setState(prev => ({
-                    ...prev,
-                    isLoading: false,
-                    balanceUSD,
-                }));
+        return balanceUSD;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to fetch balance";
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: errorMessage,
+        }));
+        throw error;
+      }
+    },
+    []
+  );
 
-                return balanceUSD;
-            } catch (error) {
-                const errorMessage =
-                    error instanceof Error
-                        ? error.message
-                        : 'Failed to fetch balance';
-                setState(prev => ({
-                    ...prev,
-                    isLoading: false,
-                    error: errorMessage,
-                }));
-                throw error;
-            }
-        },
-        []
-    );
-
-    return {
-        ...state,
-        fetchBalance,
-        reset,
-    };
+  return {
+    ...state,
+    fetchBalance,
+    reset,
+  };
 }

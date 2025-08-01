@@ -2,11 +2,9 @@ export async function call1inchAPI<T>(
   endpointPath: string,
   queryParams: Record<string, string>
 ): Promise<T> {
-  // Use the Next.js API proxy instead of calling 1inch directly
   const proxyUrl = new URL("/api/1inch", window.location.origin);
   proxyUrl.searchParams.set("endpoint", endpointPath);
 
-  // Add all query parameters to the proxy URL
   Object.entries(queryParams).forEach(([key, value]) => {
     proxyUrl.searchParams.set(key, value);
   });

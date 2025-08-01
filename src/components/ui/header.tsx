@@ -7,7 +7,7 @@ import { formatUSD } from '@/libs';
 
 const Header = () => {
     const { user } = useUser();
-    console.log('!!', user);
+    console.log('!user!', user);
     return (
         <Box
             as="header"

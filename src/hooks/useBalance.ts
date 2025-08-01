@@ -6,21 +6,7 @@ import {
   UseBalanceReturn,
   UseBalanceState,
 } from "@/types/1inch/balance";
-
-const convertWeiToHumanReadable = (
-  weiAmount: string,
-  decimals: number
-): number => {
-  const weiBigInt = BigInt(weiAmount);
-  const divisor = BigInt(10 ** decimals);
-  const wholePart = weiBigInt / divisor;
-  const remainder = weiBigInt % divisor;
-
-  const remainderStr = remainder.toString().padStart(decimals, "0");
-  const decimalPart = parseFloat(`0.${remainderStr}`);
-
-  return Number(wholePart) + decimalPart;
-};
+import { convertWeiToHumanReadable } from "@/utils/converter";
 
 export function useBalance(): UseBalanceReturn {
   const [state, setState] = useState<UseBalanceState>({
@@ -65,7 +51,7 @@ export function useBalance(): UseBalanceReturn {
           USDC_DECIMALS
         );
 
-        const balanceUSD = balanceInUSDC;
+        const balanceUSD = Number(balanceInUSDC.toString());
 
         console.log("Balance in USDC:", balanceInUSDC);
 

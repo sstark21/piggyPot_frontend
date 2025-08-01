@@ -7,8 +7,16 @@ if (!process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
 if (!process.env.NEXT_PUBLIC_API_URL) {
   throw new Error("NEXT_PUBLIC_API_URL is not set");
 }
+
+if (!process.env.NEXT_PUBLIC_INFURA_API_KEY) {
+  throw new Error("NEXT_PUBLIC_INFURA_API_KEY is not set");
+}
+
 export const appConfig = {
   chain: base,
+  infura: {
+    apiKey: process.env.NEXT_PUBLIC_INFURA_API_KEY,
+  },
   backend: {
     baseUrl: process.env.NEXT_PUBLIC_API_URL,
   },

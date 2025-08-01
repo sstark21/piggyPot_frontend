@@ -4,7 +4,6 @@ import {
   ApproveTransactionResponse,
 } from "@/types/1inch/allowance";
 import { call1inchAPI } from "@/libs/1inch/callApi";
-import { formatUnits } from "ethers";
 import { USDC_ADDRESS } from "@/config/constants";
 import { UseApproveReturn, UseApproveState } from "@/types/1inch/allowance";
 
@@ -27,6 +26,7 @@ export function useApprove(): UseApproveReturn {
 
   const checkAllowance = useCallback(
     async (
+      addressToApprove: string,
       walletAddress: string,
       expectedAllowance: bigint
     ): Promise<bigint> => {
@@ -38,13 +38,12 @@ export function useApprove(): UseApproveReturn {
         const allowanceRes = await call1inchAPI<AllowanceResponse>(
           "/swap/v6.1/8453/approve/allowance",
           {
-            tokenAddress: USDC_ADDRESS,
+            tokenAddress: addressToApprove,
             walletAddress: walletAddress,
           }
         );
 
         const allowance = BigInt(allowanceRes.allowance);
-        console.log("Allowance in ETH:", formatUnits(allowance, 18));
 
         setState((prev) => ({
           ...prev,
@@ -70,6 +69,7 @@ export function useApprove(): UseApproveReturn {
 
   const approveIfNeeded = useCallback(
     async (
+      addressToApprove: string,
       walletAddress: string,
       expectedAllowance: bigint,
       sendTransaction: (tx: {
@@ -86,7 +86,7 @@ export function useApprove(): UseApproveReturn {
         const approveTx = await call1inchAPI<ApproveTransactionResponse>(
           "/swap/v6.1/8453/approve/transaction",
           {
-            tokenAddress: USDC_ADDRESS,
+            tokenAddress: addressToApprove,
             amount: expectedAllowance.toString(),
           }
         );
@@ -104,6 +104,7 @@ export function useApprove(): UseApproveReturn {
         await new Promise((res) => setTimeout(res, 10000));
 
         const newAllowance = await checkAllowance(
+          addressToApprove,
           walletAddress,
           expectedAllowance
         );

@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ChakraCustomProvider } from '@/components/providers/chakraProvider';
 import Header from '@/components/ui/header';
-
+import { UserProvider } from '@/components/providers/userProvider';
 import { PrivyProviderComponent } from '@/components/providers/privyProvider';
 
 const inter = Inter({
@@ -26,8 +26,10 @@ export default function RootLayout({
             <body className={`${inter.variable}`}>
                 <ChakraCustomProvider>
                     <PrivyProviderComponent>
-                        <Header />
-                        {children}
+                        <UserProvider>
+                            <Header />
+                            {children}
+                        </UserProvider>
                     </PrivyProviderComponent>
                 </ChakraCustomProvider>
             </body>

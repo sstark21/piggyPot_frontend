@@ -1,92 +1,120 @@
-import { usePrivy, Wallet } from "@privy-io/react-auth";
-import { useBalance } from "@/hooks/useBalance";
-import { Button, Flex, Text } from "@chakra-ui/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Box, Button, Flex, Text } from '@chakra-ui/react';
+import { useRouter } from 'next/navigation';
+import { useUserContext } from '@/components/providers/userProvider';
+import { formatUSD } from '@/libs';
+import { PiWalletBold } from 'react-icons/pi';
+
+const TOTAL_INVESTMENT_MOCK = 1127.56;
+const PROFIT_VALUE_MOCK = 27.56;
+const PROFIT_PERCENTAGE_MOCK = 2.44;
 
 export const InvestmentInfoLayout = () => {
-  const { user, authenticated, ready } = usePrivy();
-  const router = useRouter();
-  const [wallet, setWallet] = useState<Wallet | null>(null);
+    const router = useRouter();
 
-  const {
-    fetchBalance,
-    balanceUSD,
-    isLoading: isBalanceLoading,
-  } = useBalance();
-
-  useEffect(() => {
-    console.log("Auth state:", { authenticated, ready, user: !!user });
-
-    if (!authenticated && ready) {
-      console.log("Redirecting to home page...");
-      router.push("/");
-      return;
+    const { authenticated, ready, balanceUSD } =
+        useUserContext();
+    const formatted = formatUSD(TOTAL_INVESTMENT_MOCK);
+    const parts = formatted.split('.');
+    if (!ready) {
+        return (
+            <Flex
+                flexDirection="column"
+                gap={4}
+                alignItems="center"
+                justifyContent="center"
+                h="100vh"
+            >
+                <Text>Loading...</Text>
+            </Flex>
+        );
     }
 
-    if (user?.wallet) {
-      setWallet(user.wallet);
+    // Redirect if not authenticated
+    if (!authenticated) {
+        return (
+            <Flex
+                flexDirection="column"
+                gap={4}
+                alignItems="center"
+                justifyContent="center"
+                h="100vh"
+            >
+                <Text>Redirecting to login...</Text>
+            </Flex>
+        );
     }
-  }, [user, router, authenticated, ready]);
-
-  useEffect(() => {
-    if (wallet) {
-      fetchBalance(wallet.address);
-    }
-  }, [wallet, fetchBalance]);
-
-  console.log("user:", user);
-
-  if (!ready) {
     return (
-      <Flex
-        flexDirection="column"
-        gap={4}
-        alignItems="center"
-        justifyContent="center"
-        h="100vh"
-      >
-        <Text>Loading...</Text>
-      </Flex>
-    );
-  }
+        <Flex
+            flexDirection="column"
+            gap={4}
+            alignItems="center"
+            justifyContent="center"
+            h="100vh"
+        >
+            <Text fontSize="24px" fontWeight="bold" fontFamily="Inter">
+                Total investment
+            </Text>
+            <Text fontSize="84px" fontWeight="900" fontFamily="Inter">
+                <Text as="span">{parts[0]}</Text>
+                {parts[1] && (
+                    <Text as="span" color="gray.400">
+                        .{parts[1]}
+                    </Text>
+                )}
+            </Text>
+            <Flex gap={2} alignItems="center">
+                <Text
+                    fontSize="24px"
+                    fontWeight="bold"
+                    fontFamily="Inter"
+                    color="#0BF050"
+                >
+                    {'+' + formatUSD(PROFIT_VALUE_MOCK)}
+                </Text>
+                <Text
+                    fontSize="30px"
+                    fontWeight="bold"
+                    fontFamily="Inter"
+                    color="#0BF050"
+                >
+                    ·
+                </Text>
+                <Text
+                    fontSize="24px"
+                    fontWeight="bold"
+                    fontFamily="Inter"
+                    color="#0BF050"
+                >
+                    {PROFIT_PERCENTAGE_MOCK + '%'}
+                </Text>
 
-  // Redirect if not authenticated
-  if (!authenticated) {
-    return (
-      <Flex
-        flexDirection="column"
-        gap={4}
-        alignItems="center"
-        justifyContent="center"
-        h="100vh"
-      >
-        <Text>Redirecting to login...</Text>
-      </Flex>
+                <Text
+                    fontSize="24px"
+                    fontWeight="bold"
+                    fontFamily="Inter"
+                    color="gray.400"
+                >
+                    last 24h
+                </Text>
+            </Flex>
+            <Button
+                height="72px"
+                width="180px"
+                backgroundColor="#FD92CA"
+                color="black"
+                borderRadius="16px"
+                padding="16px 28px"
+                fontSize="24px"
+                fontWeight="bold"
+                fontFamily="Inter"
+                disabled={!balanceUSD}
+                onClick={() => router.push('/invest')}
+            >
+                <Flex alignItems="center" gap={2}>
+                    <Text>Invest</Text>
+                    <PiWalletBold size={32} />
+                </Flex>
+            </Button>
+        </Flex>
     );
-  }
-  return (
-    <Flex
-      flexDirection="column"
-      gap={4}
-      alignItems="center"
-      justifyContent="center"
-      h="100vh"
-    >
-      <Text>Dashboard</Text>
-      {user ? (
-        <Text>Wallet: {wallet?.address}</Text>
-      ) : (
-        <Text>Loading profile...</Text>
-      )}
-      {isBalanceLoading ? (
-        <Text>Loading balance...</Text>
-      ) : (
-        <Text>Balance in USD: {balanceUSD}</Text>
-      )}
-      <Button disabled={!balanceUSD} onClick={() => router.push("/invest")}>
-        Invest
-      </Button>
-    </Flex>
-  );
 };

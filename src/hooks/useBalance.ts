@@ -9,7 +9,7 @@ import {
 import { convertWeiToHumanReadable } from '@/utils/converter';
 
 const USE_MOCK_BALANCE = true;
-const MOCK_BALANCE_USD = 1234.89;
+const MOCK_BALANCE_USD = 1234.56;
 
 export function useBalance(): UseBalanceReturn {
     const [state, setState] = useState<UseBalanceState>({
@@ -71,10 +71,10 @@ export function useBalance(): UseBalanceReturn {
                     setState(prev => ({
                         ...prev,
                         isLoading: false,
-                        balanceUSD,
+                        balanceUSD: Number(balanceUSD),
                     }));
 
-                    return balanceUSD;
+                    return Number(balanceUSD);
                 }
             } catch (error) {
                 const errorMessage =

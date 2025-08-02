@@ -7,7 +7,7 @@ import { useUserContext } from '@/components/providers/userProvider';
 import { useRouter } from 'next/navigation';
 
 const Header = () => {
-    const { balanceUSD, isBalanceLoading } = useUserContext();
+    const { balanceUSD, isBalanceLoading, logout } = useUserContext();
     const router = useRouter();
     return (
         <Box
@@ -68,7 +68,7 @@ const Header = () => {
                             {formatUSD(balanceUSD || 0)}
                         </Text>
                     )}
-
+{/* 
                     <Button
                         borderRadius="12px"
                         size="md"
@@ -84,7 +84,7 @@ const Header = () => {
                         >
                             Top Up
                         </Text>
-                    </Button>
+                    </Button> */}
                     <IconButton
                         aria-label="User profile"
                         size="md"
@@ -92,6 +92,7 @@ const Header = () => {
                         borderRadius="12px"
                         backgroundColor="#FCFCFC33"
                         color="white"
+                        onClick={() => logout()}
                     >
                         <PiUserBold />
                     </IconButton>

@@ -80,7 +80,7 @@ export const InvestmentSummary = ({
             maxW="600px"
             flexDirection="column"
             justifyContent="center"
-            h="100vh"
+            mt={100}
         >
             <Box display="flex" flexDirection="column" alignItems="center">
                 <Flex alignItems="center" gap={2} position="relative">
@@ -115,7 +115,7 @@ export const InvestmentSummary = ({
                     fontFamily="Inter"
                     color="gray.300"
                 >
-                    {investmentTypeShare.conservative}%
+                    Non-risky assets
                 </Text>
             </Box>
             <Box display="flex" flexDirection="column" alignItems="center">
@@ -128,7 +128,7 @@ export const InvestmentSummary = ({
                     fontFamily="Inter"
                     color="gray.300"
                 >
-                    {investmentTypeShare.risky}%
+                    Risky assets
                 </Text>
             </Box>
             <Button

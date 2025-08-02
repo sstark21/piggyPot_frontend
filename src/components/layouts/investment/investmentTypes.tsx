@@ -48,7 +48,7 @@ export const InvestmentTypes = ({
             flexDirection="column"
             justifyContent="center"
             maxW="600px"
-            h="100vh"
+            mt={100}
         >
             <Box
                 w="full"
@@ -77,7 +77,12 @@ export const InvestmentTypes = ({
                             }}
                         />
                     </Button>
-                    <Text fontSize="40px" fontWeight="bold" fontFamily="Inter">
+                    <Text
+                        fontSize="40px"
+                        fontWeight="bold"
+                        fontFamily="Inter"
+                        textAlign="center"
+                    >
                         How much you want to use for risky investments?
                     </Text>
                 </Flex>

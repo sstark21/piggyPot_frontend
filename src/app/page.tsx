@@ -2,13 +2,13 @@
 
 import styles from "./page.module.css";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
 import { Button, Flex, Text } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { LoadingComponent } from "@/components/ui/loading";
 
 export default function Home() {
-  const { login, ready, authenticated, user, logout } = usePrivy();
+  const { login, ready, authenticated, user } = usePrivy();
   const wallets = useWallets();
   const router = useRouter();
 
@@ -24,7 +24,7 @@ export default function Home() {
   if (!ready) {
     return (
       <Flex>
-        <Text>Loading...</Text>;
+        <LoadingComponent />
       </Flex>
     );
   }

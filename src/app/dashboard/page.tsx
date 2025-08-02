@@ -3,6 +3,7 @@
 import { Container, Flex, Text } from "@chakra-ui/react";
 import { InvestmentInfoLayout } from "@/components/layouts/dashboard/investmentInfo";
 import { useUserContext } from "@/components/providers/userProvider";
+import { LoadingComponent } from "@/components/ui/loading";
 
 export default function DashboardPage() {
   const { authenticated, ready } = useUserContext();
@@ -15,9 +16,9 @@ export default function DashboardPage() {
         gap={4}
         alignItems="center"
         justifyContent="center"
-        h="100vh"
+        mt={100}
       >
-        <Text>Loading...</Text>
+        <LoadingComponent />
       </Flex>
     );
   }

@@ -53,7 +53,7 @@ export const InvestmentAmount = ({
             flexDirection="column"
             alignItems="center"
             justifyContent="center"
-            h="100vh"
+            mt={100}
         >
             <Flex alignItems="center" gap={2} position="relative">
                 <Button

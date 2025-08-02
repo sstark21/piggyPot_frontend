@@ -1,46 +1,11 @@
 import { useState, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { Token } from '@uniswap/sdk-core';
-import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from '@/config/constants';
 import { ERC20_ABI } from '@/utils/abis';
-
-export enum TransactionState {
-    Idle = 'idle',
-    Loading = 'loading',
-    Success = 'success',
-    Failed = 'failed',
-}
-
-interface UseUniswapApproveState {
-    isLoading: boolean;
-    error: string | null;
-    allowance: bigint | null;
-    isApproved: boolean;
-    transactionState: TransactionState;
-}
-
-interface UseUniswapApproveReturn extends UseUniswapApproveState {
-    checkTokenAllowance: (
-        tokenAddress: string,
-        spenderAddress: string,
-        walletAddress: string,
-        tokenAmount: bigint,
-        provider: ethers.BrowserProvider
-    ) => Promise<bigint>;
-    approveToken: (
-        tokenAddress: string,
-        spenderAddress: string,
-        walletAddress: string,
-        tokenAmount: bigint,
-        provider: ethers.BrowserProvider,
-        sendTransaction: (tx: {
-            to: string;
-            data: string;
-            value: bigint;
-        }) => Promise<string>
-    ) => Promise<string>;
-    reset: () => void;
-}
+import {
+    TransactionState,
+    UseUniswapApproveReturn,
+    UseUniswapApproveState,
+} from '@/types/uniswap/allowance';
 
 export function useUniswapApprove(): UseUniswapApproveReturn {
     const [state, setState] = useState<UseUniswapApproveState>({
@@ -67,7 +32,7 @@ export function useUniswapApprove(): UseUniswapApproveReturn {
             spenderAddress: string,
             walletAddress: string,
             tokenAmount: bigint,
-            provider: ethers.BrowserProvider
+            provider: ethers.providers.Provider
         ): Promise<bigint> => {
             setState(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -85,14 +50,16 @@ export function useUniswapApprove(): UseUniswapApproveReturn {
                     spenderAddress
                 );
 
+                const allowanceBigInt = BigInt(allowance.toString());
+
                 setState(prev => ({
                     ...prev,
                     isLoading: false,
-                    allowance,
-                    isApproved: allowance >= tokenAmount,
+                    allowance: allowanceBigInt,
+                    isApproved: BigInt(allowance.toString()) >= tokenAmount,
                 }));
 
-                return allowance;
+                return allowanceBigInt;
             } catch (error) {
                 const errorMessage =
                     error instanceof Error
@@ -116,7 +83,7 @@ export function useUniswapApprove(): UseUniswapApproveReturn {
             spenderAddress: string,
             walletAddress: string,
             tokenAmount: bigint,
-            provider: ethers.BrowserProvider,
+            provider: ethers.providers.Provider,
             sendTransaction: (tx: {
                 to: string;
                 data: string;
@@ -141,10 +108,8 @@ export function useUniswapApprove(): UseUniswapApproveReturn {
                     provider
                 );
 
-                // const MAX = ethers.MaxUint256;
-
                 const transaction =
-                    await tokenContract.approve.populateTransaction(
+                    await tokenContract.populateTransaction.approve(
                         spenderAddress,
                         tokenAmount
                     );
@@ -154,7 +119,9 @@ export function useUniswapApprove(): UseUniswapApproveReturn {
                 const txHash = await sendTransaction({
                     to: transaction.to!,
                     data: transaction.data!,
-                    value: transaction.value || BigInt(0),
+                    value: transaction.value
+                        ? BigInt(transaction.value.toString())
+                        : BigInt(0),
                 });
 
                 console.log('Approval transaction sent. Hash:', txHash);
@@ -196,10 +163,77 @@ export function useUniswapApprove(): UseUniswapApproveReturn {
         [checkTokenAllowance]
     );
 
+    const revokeToken = useCallback(
+        async (
+            tokenAddress: string,
+            spenderAddress: string,
+            walletAddress: string,
+            provider: ethers.providers.Provider,
+            sendTransaction: (tx: {
+                to: string;
+                data: string;
+                value: bigint;
+            }) => Promise<string>
+        ): Promise<string> => {
+            setState(prev => ({
+                ...prev,
+                isLoading: true,
+                error: null,
+                transactionState: TransactionState.Loading,
+            }));
+            try {
+                const tokenContract = new ethers.Contract(
+                    tokenAddress,
+                    ERC20_ABI,
+                    provider
+                );
+                const transaction =
+                    await tokenContract.populateTransaction.approve(
+                        spenderAddress,
+                        BigInt(0)
+                    );
+                const txHash = await sendTransaction({
+                    to: transaction.to!,
+                    data: transaction.data!,
+                    value: BigInt(0),
+                });
+                const newAllowance = await checkTokenAllowance(
+                    tokenAddress,
+                    spenderAddress,
+                    walletAddress,
+                    BigInt(0),
+                    provider
+                );
+                setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    allowance: newAllowance,
+                    isApproved: false,
+                    transactionState: TransactionState.Success,
+                }));
+                return txHash;
+            } catch (error) {
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to revoke token';
+                setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    error: errorMessage,
+                    transactionState: TransactionState.Failed,
+                }));
+                throw error;
+            }
+        },
+        [checkTokenAllowance]
+    );
+
     return {
         ...state,
         checkTokenAllowance,
         approveToken,
+        revokeToken,
         reset,
     };
 }

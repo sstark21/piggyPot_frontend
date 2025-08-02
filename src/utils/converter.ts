@@ -1,10 +1,10 @@
-import { formatUnits } from 'ethers';
+import { ethers } from 'ethers';
 
 export const convertWeiToHumanReadable = (
     weiAmount: string | number,
     decimals: number
 ): string => {
-    const result = formatUnits(weiAmount, decimals);
+    const result = ethers.utils.formatUnits(weiAmount, decimals);
     return result;
 };
 

@@ -4,7 +4,7 @@ import { POOL_FACTORY_CONTRACT_ADDRESS } from '@/config/constants';
 import { computePoolAddress } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
 
-interface PoolInfo {
+interface PoolInfoProps {
     token0: string;
     token1: string;
     fee: number;
@@ -18,8 +18,8 @@ export async function getPoolInfo(
     token0Object: Token,
     token1Object: Token,
     feeTier: number,
-    provider: ethers.Provider
-): Promise<PoolInfo> {
+    provider: ethers.providers.Provider
+): Promise<PoolInfoProps> {
     if (!provider) {
         throw new Error('No provider provided');
     }
@@ -50,10 +50,10 @@ export async function getPoolInfo(
     return {
         token0,
         token1,
-        fee: Number(fee),
-        tickSpacing: Number(tickSpacing),
-        liquidity: BigInt(liquidity),
+        fee: fee,
+        tickSpacing: tickSpacing,
+        liquidity: liquidity,
         sqrtPriceX96: slot0[0],
-        tick: Number(slot0[1]),
+        tick: slot0[1],
     };
 }

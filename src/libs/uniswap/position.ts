@@ -8,50 +8,46 @@ import { Pool } from '@uniswap/v3-sdk';
 import { nearestUsableTick } from '@uniswap/v3-sdk';
 import { createUniswapToken } from './createToken';
 import { getPoolInfo } from './pool';
-import {
-    MAX_FEE_PER_GAS,
-    MAX_PRIORITY_FEE_PER_GAS,
-    NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-} from '@/config/constants';
+import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from '@/config/constants';
 import { ethers } from 'ethers';
-import { convertHumanReadableToWei } from '@/utils/converter';
+import { PoolInfo } from '@/types/backend/pools';
 
-export async function constructPosition(
-    token0Address: string,
-    token1Address: string,
-    token0Decimals: number,
-    token1Decimals: number,
-    token0Symbol: string,
-    token1Symbol: string,
-    token0Name: string,
-    token1Name: string,
-    fee: number,
-    token0Amount: bigint,
-    token1Amount: bigint,
-    provider: ethers.Provider
-): Promise<Position> {
-    console.log('Amounts:', { token0Amount, token1Amount });
+interface ConstructPositionProps {
+    poolInfoRawData: PoolInfo;
+    token0AmountInBigInt: bigint;
+    token1AmountInBigInt: bigint;
+    provider: ethers.providers.Provider;
+}
+
+export async function constructPosition({
+    poolInfoRawData,
+    token0AmountInBigInt,
+    token1AmountInBigInt,
+    provider,
+}: ConstructPositionProps): Promise<Position> {
+    console.log('Amounts to add in position in BigInt:', {
+        token0AmountInBigInt,
+        token1AmountInBigInt,
+    });
     // Create Uniswap token objects
     const token0Currency = await createUniswapToken(
-        token0Address,
-        token0Decimals,
-        token0Symbol,
-        token0Name
+        poolInfoRawData.token0,
+        poolInfoRawData.token0Decimals,
+        poolInfoRawData.token0Symbol,
+        poolInfoRawData.token0Name
     );
     const token1Currency = await createUniswapToken(
-        token1Address,
-        token1Decimals,
-        token1Symbol,
-        token1Name
+        poolInfoRawData.token1,
+        poolInfoRawData.token1Decimals,
+        poolInfoRawData.token1Symbol,
+        poolInfoRawData.token1Name
     );
-
-    // CurrencyAmount<Token>
 
     // get pool info
     const poolInfo = await getPoolInfo(
         token0Currency,
         token1Currency,
-        fee,
+        Number(poolInfoRawData.feeTier),
         provider
     );
 
@@ -59,32 +55,12 @@ export async function constructPosition(
 
     const token0AmountCurrency = CurrencyAmount.fromRawAmount(
         token0Currency,
-        convertHumanReadableToWei(
-            Number(token0Amount),
-            Number(token0Decimals)
-        ).toString()
+        token0AmountInBigInt.toString()
     );
     const token1AmountCurrency = CurrencyAmount.fromRawAmount(
         token1Currency,
-        convertHumanReadableToWei(
-            Number(token1Amount),
-            Number(token1Decimals)
-        ).toString()
+        token1AmountInBigInt.toString()
     );
-
-    console.log('Token amounts currency:', {
-        token0AmountCurrency,
-        token1AmountCurrency,
-    });
-
-    console.log('Pool info params for Uniswap:', {
-        token0Currency,
-        token1Currency,
-        token0AmountCurrency,
-        token1AmountCurrency,
-        fee,
-        poolInfo,
-    });
 
     // construct pool instance
     const configuredPool = new Pool(
@@ -139,11 +115,8 @@ export async function mintPosition(
     // build transaction
     const transaction = {
         data: calldata,
-        from: address,
         to: NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
         value: BigInt(value),
-        maxFeePerGas: MAX_FEE_PER_GAS,
-        maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS,
     };
 
     console.log('Uniswap position tx:', transaction);

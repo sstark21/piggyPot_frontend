@@ -1,144 +1,165 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
-  Container,
-  Flex,
-  Button,
-  VStack,
-  HStack,
-  Text,
-} from "@chakra-ui/react";
-import { useRouter } from "next/navigation";
-import { usePrivy } from "@privy-io/react-auth";
-import { InvestmentTypes } from "./investmentTypes";
-import { InvestmentAmount } from "./investmentAmount";
-import { InvestmentSummary } from "./investmentSummary";
+    Container,
+    Flex,
+    Button,
+    VStack,
+    HStack,
+    Text,
+} from '@chakra-ui/react';
+import { useRouter } from 'next/navigation';
+import { usePrivy } from '@privy-io/react-auth';
+import { InvestmentTypes } from './investmentTypes';
+import { InvestmentAmount } from './investmentAmount';
+import { InvestmentSummary } from './investmentSummary';
 
 export const InvestmentStepper = () => {
-  const { authenticated, ready } = usePrivy();
-  const [amountToInvest, setAmountToInvest] = useState<number>(0);
-  const [isAmountExceeded, setIsAmountExceeded] = useState<boolean>(false);
-  const [investmentTypeShare, setInvestmentTypeShare] = useState<{
-    risky: number;
-    conservative: number;
-    riskyAmount: number;
-    conservativeAmount: number;
-  }>({
-    risky: 50,
-    conservative: 50,
-    riskyAmount: 0,
-    conservativeAmount: 0,
-  });
+    const { authenticated, ready } = usePrivy();
+    const [amountToInvest, setAmountToInvest] = useState<number>(0);
+    const [isAmountExceeded, setIsAmountExceeded] = useState<boolean>(false);
+    const [investmentTypeShare, setInvestmentTypeShare] = useState<{
+        risky: number;
+        conservative: number;
+        riskyAmount: number;
+        conservativeAmount: number;
+    }>({
+        risky: 50,
+        conservative: 50,
+        riskyAmount: 0,
+        conservativeAmount: 0,
+    });
 
-  const [step, setStep] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
+    const [step, setStep] = useState(0);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-  const router = useRouter();
+    const router = useRouter();
 
-  useEffect(() => {
-    if (!authenticated && ready) {
-      router.push("/");
-    }
-  }, [authenticated, ready, router]);
+    useEffect(() => {
+        if (
+            investmentTypeShare.risky === 50 &&
+            investmentTypeShare.conservative === 50
+        ) {
+            setInvestmentTypeShare({
+                risky: 50,
+                conservative: 50,
+                riskyAmount: amountToInvest * 0.5,
+                conservativeAmount: amountToInvest * 0.5,
+            });
+        }
+    }, [amountToInvest]);
 
-  const stepsMapper: Record<number, React.ReactNode> = {
-    0: (
-      <InvestmentAmount
-        amount={amountToInvest}
-        onAmountChange={setAmountToInvest}
-        setIsAmountExceeded={setIsAmountExceeded}
-      />
-    ),
-    1: (
-      <InvestmentTypes
-        amountToInvest={amountToInvest}
-        shares={investmentTypeShare}
-        onSharesChange={setInvestmentTypeShare}
-      />
-    ),
-    2: (
-      <InvestmentSummary
-        amountToInvest={amountToInvest}
-        investmentTypeShare={investmentTypeShare}
-        isProcessing={isProcessing}
-        setIsProcessing={setIsProcessing}
-      />
-    ),
-  };
+    useEffect(() => {
+        if (!authenticated && ready) {
+            router.push('/');
+        }
+    }, [authenticated, ready, router]);
 
-  const canProceed = () => {
-    switch (step) {
-      case 0:
-        return amountToInvest && amountToInvest > 0;
-      case 1:
-        return (
-          investmentTypeShare.risky + investmentTypeShare.conservative === 100
-        );
-      case 2:
-        return amountToInvest && amountToInvest > 0;
-      case 3:
-        return amountToInvest && amountToInvest > 0;
-      default:
-        return false;
-    }
-  };
+    const stepsMapper: Record<number, React.ReactNode> = {
+        0: (
+            <InvestmentAmount
+                amount={amountToInvest}
+                onAmountChange={setAmountToInvest}
+                setIsAmountExceeded={setIsAmountExceeded}
+            />
+        ),
+        1: (
+            <InvestmentTypes
+                amountToInvest={amountToInvest}
+                shares={investmentTypeShare}
+                onSharesChange={setInvestmentTypeShare}
+            />
+        ),
+        2: (
+            <InvestmentSummary
+                amountToInvest={amountToInvest}
+                investmentTypeShare={investmentTypeShare}
+                isProcessing={isProcessing}
+                setIsProcessing={setIsProcessing}
+            />
+        ),
+    };
 
-  const handleNext = () => {
-    if (canProceed() && step < 3) {
-      setStep(step + 1);
-    }
-  };
+    const canProceed = () => {
+        switch (step) {
+            case 0:
+                return amountToInvest && amountToInvest > 0;
+            case 1:
+                return (
+                    investmentTypeShare.risky +
+                        investmentTypeShare.conservative ===
+                    100
+                );
+            case 2:
+                return amountToInvest && amountToInvest > 0;
+            case 3:
+                return amountToInvest && amountToInvest > 0;
+            default:
+                return false;
+        }
+    };
 
-  const handleBack = () => {
-    if (step > 0) {
-      setStep(step - 1);
-    }
-  };
+    const handleNext = () => {
+        if (canProceed() && step < 3) {
+            setStep(step + 1);
+        }
+    };
 
-  const handleClose = () => {
-    router.push("/dashboard");
-  };
+    const handleBack = () => {
+        if (step > 0) {
+            setStep(step - 1);
+        }
+    };
 
-  return (
-    <Container maxW="container.md" py={8}>
-      <VStack gap={8} alignItems="stretch">
-        {/* Navigation Buttons */}
-        {step < 3 && (
-          <HStack justify="space-between" pt={6}>
-            <Button
-              onClick={handleBack}
-              disabled={step === 0}
-              variant="outline"
-            >
-              Back
-            </Button>
+    const handleClose = () => {
+        router.push('/dashboard');
+    };
 
-            <HStack gap={4}>
-              <Button onClick={handleClose} variant="ghost" colorScheme="red">
-                Close
-              </Button>
+    return (
+        <Container maxW="container.md" py={8}>
+            <VStack gap={8} alignItems="stretch">
+                {/* Navigation Buttons */}
+                {step < 3 && (
+                    <HStack justify="space-between" pt={6}>
+                        <Button
+                            onClick={handleBack}
+                            disabled={step === 0}
+                            variant="outline"
+                        >
+                            Back
+                        </Button>
 
-              {step < 2 && (
-                <Button
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                  colorScheme="blue"
-                >
-                  Next
-                </Button>
-              )}
-            </HStack>
-          </HStack>
-        )}
-        {/* Step Content */}
-        <Flex minH="400px" align="center" justify="center">
-          {stepsMapper[step]}
-        </Flex>
-        {isAmountExceeded && (
-          <Text color="red.500" fontSize="sm" mt={2}>
-            ⚠️ Amount exceeds your balance. Please enter a smaller amount.
-          </Text>
-        )}
-      </VStack>
-    </Container>
-  );
+                        <HStack gap={4}>
+                            <Button
+                                onClick={handleClose}
+                                variant="ghost"
+                                colorScheme="red"
+                            >
+                                Close
+                            </Button>
+
+                            {step < 2 && (
+                                <Button
+                                    onClick={handleNext}
+                                    disabled={!canProceed()}
+                                    colorScheme="blue"
+                                >
+                                    Next
+                                </Button>
+                            )}
+                        </HStack>
+                    </HStack>
+                )}
+                {/* Step Content */}
+                <Flex minH="400px" align="center" justify="center">
+                    {stepsMapper[step]}
+                </Flex>
+                {isAmountExceeded && (
+                    <Text color="red.500" fontSize="sm" mt={2}>
+                        ⚠️ Amount exceeds your balance. Please enter a smaller
+                        amount.
+                    </Text>
+                )}
+            </VStack>
+        </Container>
+    );
 };

@@ -9,6 +9,7 @@ import {
     useWallets,
 } from '@privy-io/react-auth';
 import {
+    MAX_APPROVAL_AMOUNT,
     NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
     USDC_ADDRESS,
     USDC_DECIMALS,
@@ -21,12 +22,16 @@ import {
     getTokenPrices,
     convertUSDToTokenAmount,
 } from '@/libs/1inch/getTokenPrices';
+import { executeTokensSwaps } from '@/libs/1inch/executeSwaps';
+import { PoolInfo } from '@/types/backend/pools';
+import { addLiquidityAndMintPosition } from '@/libs/uniswap/addLiquidity';
+import { processPoolInvestment } from './processPool';
 
 interface InvestmentWorkflowProps {
     userIdRaw: string;
-    amount: number;
-    riskyAmount: number;
-    conservativeAmount: number;
+    amountToInvest: number;
+    riskyInvestmentAmountUsd: number;
+    conservativeInvestmentAmountUsd: number;
     onProgress: (step: string, progress: number) => void;
     onComplete: () => void;
     onError: (error: string) => void;
@@ -34,9 +39,9 @@ interface InvestmentWorkflowProps {
 
 export function InvestmentWorkflow({
     userIdRaw,
-    amount,
-    riskyAmount,
-    conservativeAmount,
+    amountToInvest,
+    riskyInvestmentAmountUsd,
+    conservativeInvestmentAmountUsd,
     onProgress,
     onComplete,
     onError,
@@ -45,7 +50,7 @@ export function InvestmentWorkflow({
     const [recommendationsReady, setRecommendationsReady] = useState(false);
     const { user } = usePrivy();
     const { wallets } = useWallets();
-    const [provider, setProvider] = useState<ethers.BrowserProvider | null>(
+    const [provider, setProvider] = useState<ethers.providers.Provider | null>(
         null
     );
 
@@ -56,7 +61,7 @@ export function InvestmentWorkflow({
             );
 
             if (primaryWallet) {
-                const provider = new ethers.BrowserProvider(
+                const provider = new ethers.providers.Web3Provider(
                     await primaryWallet.getEthereumProvider()
                 );
                 setProvider(provider);
@@ -75,18 +80,15 @@ export function InvestmentWorkflow({
         error: recommendationsError,
     } = usePoolsRecommendations(
         userIdRaw,
-        amount,
-        riskyAmount,
-        conservativeAmount
+        amountToInvest,
+        riskyInvestmentAmountUsd,
+        conservativeInvestmentAmountUsd
     );
-
-    console.log('recommendationsResponse', recommendationsResponse);
-    console.log('isRecommendationsFinished', isRecommendationsFinished);
-    console.log('recommendationsError', recommendationsError);
 
     const { swapTokens } = useSwap();
     const { check1inchAllowance, approve1inchIfNeeded } = use1inchApprove();
-    const { checkTokenAllowance, approveToken } = useUniswapApprove();
+    const { checkTokenAllowance, approveToken, revokeToken } =
+        useUniswapApprove();
     const { sendTransaction: privySendTransaction } = useSendTransaction();
 
     const sendTransaction = async (tx: {
@@ -105,7 +107,8 @@ export function InvestmentWorkflow({
     // Effect 1: Fetch recommendations
     useEffect(() => {
         const fetchRecommendations = async () => {
-            if (isProcessing || !user?.wallet?.address || amount <= 0) return;
+            if (isProcessing || !user?.wallet?.address || amountToInvest <= 0)
+                return;
 
             setIsProcessing(true);
             setRecommendationsReady(false);
@@ -133,7 +136,7 @@ export function InvestmentWorkflow({
         };
 
         fetchRecommendations();
-    }, [user, amount]);
+    }, [user, amountToInvest]);
 
     useEffect(() => {
         if (isRecommendationsFinished) {
@@ -153,8 +156,6 @@ export function InvestmentWorkflow({
     // Effect 2: Process swaps after recommendations are ready
     useEffect(() => {
         const processSwaps = async () => {
-            console.log('Current recommendations', recommendationsResponse);
-
             if (
                 !recommendationsReady ||
                 !recommendationsResponse?.data?.recommendations ||
@@ -167,9 +168,8 @@ export function InvestmentWorkflow({
             try {
                 const recommendedPools =
                     recommendationsResponse.data.recommendations || [];
-                console.log('Recommended pools:', recommendedPools);
 
-                // Separate pools by risk level
+                // Separate pools by risk level: non-risky and risky
                 const riskyPools = recommendedPools.filter(
                     (pool: unknown) =>
                         !(pool as { isStablecoinPool: boolean })
@@ -180,368 +180,68 @@ export function InvestmentWorkflow({
                         (pool as { isStablecoinPool: boolean }).isStablecoinPool
                 );
 
-                console.log('riskyAmount', riskyAmount);
-                console.log('conservativeAmount', conservativeAmount);
-                // console.log('Risky pools:', riskyPools);
-                // console.log('Conservative pools:', conservativePools);
-
-                // Calculate amounts per pool (handle case where there might be only 1 pool)
-                const riskyAmountPerPool =
-                    riskyPools.length > 0 ? riskyAmount / riskyPools.length : 0;
-                const conservativeAmountPerPool =
-                    conservativePools.length > 0
-                        ? conservativeAmount / conservativePools.length
-                        : 0;
-
-                // Check USDC allowance once before processing pools
-                const totalRiskyAmount = riskyAmount;
-                const totalConservativeAmount = conservativeAmount;
-                const totalAmount = totalRiskyAmount + totalConservativeAmount;
-
-                if (totalAmount > 0) {
+                // CHECK IF USER HAS ENOUGH USDC TO INVEST
+                // THEN CHECK IF 1INCH HAS ALLOWANCE TO SPEND USDC
+                if (amountToInvest > 0) {
                     onProgress('Checking USDC allowance...', 20);
 
-                    const totalAmountBigInt = convertHumanReadableToWei(
-                        totalAmount,
+                    const totalAmountToInvestBigInt = convertHumanReadableToWei(
+                        amountToInvest,
                         USDC_DECIMALS
                     );
 
                     const allowance = await check1inchAllowance(
                         USDC_ADDRESS,
                         walletAddress,
-                        totalAmountBigInt
+                        totalAmountToInvestBigInt
                     );
 
                     console.log('Current wallet allowance for USDC', {
-                        allowance,
-                        totalAmountBigInt,
+                        current: allowance,
+                        toBe: totalAmountToInvestBigInt,
                     });
 
-                    if (allowance < totalAmountBigInt) {
-                        console.log('Approving USDC for a primary wallet...');
+                    if (allowance < totalAmountToInvestBigInt) {
                         onProgress('Approving USDC...', 25);
                         await approve1inchIfNeeded(
                             USDC_ADDRESS,
                             walletAddress,
-                            totalAmountBigInt,
+                            totalAmountToInvestBigInt,
                             sendTransaction
                         );
                     }
+                } else {
+                    onError('Amount to invest is 0');
                 }
 
                 if (riskyPools.length > 0) {
-                    for (let i = 0; i < riskyPools.length; i++) {
-                        const pool = riskyPools[i] as {
-                            token0: string;
-                            token1: string;
-                            token0Decimals: number;
-                            token1Decimals: number;
-                            feeTier: string;
-                            token0Symbol: string;
-                            token1Symbol: string;
-                            token0Name: string;
-                            token1Name: string;
-                        };
-                        const poolAmount = riskyAmountPerPool;
-
-                        onProgress(
-                            `Swapping tokens for risky pool ${i + 1}/${riskyPools.length}...`,
-                            30 + (i * 15) / riskyPools.length
-                        );
-
-                        // Get token prices from 1inch
-                        const tokenPrices = await getTokenPrices([
-                            pool.token0,
-                            pool.token1,
-                        ]);
-
-                        // Calculate token amounts based on USD value and current prices
-                        const token0AmountUSD = poolAmount / 2; // Half in token0
-                        const token1AmountUSD = poolAmount / 2; // Half in token1
-
-                        // Convert USD amounts to token amounts using current prices
-                        const token0AmountBigInt = convertUSDToTokenAmount(
-                            token0AmountUSD,
-                            pool.token0,
-                            pool.token0Decimals,
-                            tokenPrices[pool.token0.toLowerCase()]
-                        );
-                        const token1AmountBigInt = convertUSDToTokenAmount(
-                            token1AmountUSD,
-                            pool.token1,
-                            pool.token1Decimals,
-                            tokenPrices[pool.token1.toLowerCase()]
-                        );
-
-                        console.log('Token prices:', tokenPrices);
-                        console.log('pool amount in USD', poolAmount);
-                        console.log(
-                            'token0Amount in USD risky',
-                            token0AmountUSD
-                        );
-                        console.log(
-                            'token1Amount in USD risky',
-                            token1AmountUSD
-                        );
-
-                        console.log(
-                            'token0Amount in a token price (token0):',
-                            token0AmountUSD
-                        );
-                        console.log(
-                            'token1Amount in a token price (token1):',
-                            token1AmountUSD
-                        );
-
-                        console.log(
-                            'token0Amount in BigInt risky',
-                            token0AmountBigInt
-                        );
-                        console.log(
-                            'token1Amount in BigInt risky',
-                            token1AmountBigInt
-                        );
-
-                        if (token0AmountUSD > 0) {
-                            onProgress(
-                                `Swapping USDC to ${pool.token0Symbol}...`,
-                                30 + (i * 15) / riskyPools.length
-                            );
-                            // await swapTokens(
-                            //     pool.token0,
-                            //     token0AmountBigInt.toString(),
-                            //     walletAddress
-                            // );
-                        }
-
-                        if (token1AmountUSD > 0) {
-                            onProgress(
-                                `Swapping USDC to ${pool.token1Symbol}...`,
-                                30 + (i * 15) / riskyPools.length
-                            );
-                            // await swapTokens(
-                            //     pool.token1,
-                            //     token1AmountBigInt.toString(),
-                            //     walletAddress
-                            // );
-                        }
-
-                        onProgress(
-                            'Approving tokens for adding them to liquidity pool...',
-                            45 + (i * 15) / riskyPools.length
-                        );
-
-                        const token0AllowanceForUniswap =
-                            await checkTokenAllowance(
-                                pool.token0,
-                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-                                walletAddress,
-                                token0AmountBigInt,
-                                provider!
-                            );
-
-                        console.log(
-                            `Checking allowance for Uniswap ${pool.token0Symbol}:`,
-                            {
-                                token0AllowanceForUniswap,
-                                token0AmountBigInt,
-                            }
-                        );
-
-                        if (token0AllowanceForUniswap < token0AmountBigInt) {
-                            onProgress(`Approving ${pool.token0Symbol}...`, 50);
-                            await approveToken(
-                                pool.token0,
-                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-                                walletAddress,
-                                token0AmountBigInt,
-                                provider!,
-                                sendTransaction
-                            );
-                        }
-
-                        const token1AllowanceForUniswap =
-                            await checkTokenAllowance(
-                                pool.token1,
-                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-                                walletAddress,
-                                token1AmountBigInt,
-                                provider!
-                            );
-
-                        console.log(
-                            `Checking allowance for Uniswap ${pool.token1Symbol}:`,
-                            {
-                                token0AllowanceForUniswap,
-                                token0AmountBigInt,
-                            }
-                        );
-
-                        if (token1AllowanceForUniswap < token1AmountBigInt) {
-                            onProgress(`Approving ${pool.token1Symbol}...`, 55);
-                            await approveToken(
-                                pool.token1,
-                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-                                walletAddress,
-                                token1AmountBigInt,
-                                provider!,
-                                sendTransaction
-                            );
-                        }
-
-                        // if (
-                        //     token0AllowanceForUniswap <= token0AmountBigInt &&
-                        //     token1AllowanceForUniswap <= token1AmountBigInt
-                        // ) {
-                        console.log('Minting position for risky pool', i + 1);
-                        onProgress(
-                            `Minting position for risky pool ${i + 1}...`,
-                            60 + (i * 10) / riskyPools.length
-                        );
-
-                        // Use default token info since recommendations don't include symbols/names
-                        const fee = Number(pool.feeTier);
-
-                        console.log('Fee for a pool:', fee);
-
-                        const position = await constructPosition(
-                            pool.token0,
-                            pool.token1,
-                            pool.token0Decimals,
-                            pool.token1Decimals,
-                            pool.token0Symbol,
-                            pool.token1Symbol,
-                            pool.token0Name,
-                            pool.token1Name,
-                            fee,
-                            token0AmountBigInt,
-                            token1AmountBigInt,
-                            provider!
-                        );
-
-                        console.log('Position for Uniswap:', position);
-
-                        // Mint position
-                        const txHash = await mintPosition(
-                            walletAddress,
-                            position,
-                            sendTransaction
-                        );
-
-                        console.log(
-                            `Position minted for risky pool ${i + 1}:`,
-                            txHash
-                        );
-                    }
-                    // }
+                    await processPoolInvestment({
+                        poolInfo: riskyPools[0],
+                        amountToInvestToPool: riskyInvestmentAmountUsd,
+                        walletAddress,
+                        onProgress,
+                        onComplete,
+                        sendTransaction,
+                        swapTokens,
+                        provider: provider!,
+                        checkTokenAllowance,
+                        approveToken,
+                    });
                 }
 
                 if (conservativePools.length > 0) {
-                    for (let i = 0; i < conservativePools.length; i++) {
-                        const pool = conservativePools[i] as {
-                            token0: string;
-                            token1: string;
-                            token0Decimals: number;
-                            token1Decimals: number;
-                            token0Symbol: string;
-                            token1Symbol: string;
-                            token0Name: string;
-                            token1Name: string;
-                            feeTier: string;
-                        };
-                        const poolAmount = conservativeAmountPerPool;
-
-                        onProgress(
-                            `Swapping tokens for conservative pool ${i + 1}/${
-                                conservativePools.length
-                            }...`,
-                            70 + (i * 10) / conservativePools.length
-                        );
-
-                        const token0Amount = Math.ceil(poolAmount / 2);
-                        const token1Amount = poolAmount - token0Amount;
-
-                        const token0AmountBigInt = convertHumanReadableToWei(
-                            token0Amount,
-                            6
-                        );
-                        const token1AmountBigInt = convertHumanReadableToWei(
-                            token1Amount,
-                            6
-                        );
-
-                        if (token0Amount > 0) {
-                            onProgress(
-                                `Swapping USDC to ${pool.token0Symbol}...`,
-                                70 + (i * 10) / conservativePools.length
-                            );
-                            // await swapTokens(
-                            //     pool.token0,
-                            //     token0AmountBigInt.toString(),
-                            //     walletAddress
-                            // );
-                        }
-
-                        // Swap USDC to token1
-                        if (token1Amount > 0) {
-                            onProgress(
-                                `Swapping USDC to ${pool.token1Symbol}...`,
-                                70 + (i * 10) / conservativePools.length
-                            );
-                            // await swapTokens(
-                            //     pool.token1,
-                            //     token1AmountBigInt.toString(),
-                            //     walletAddress
-                            // );
-                        }
-
-                        onProgress(
-                            'Adding liquidity to pool...',
-                            80 + (i * 10) / conservativePools.length
-                        );
-
-                        const token0AllowanceForUniswap =
-                            await checkTokenAllowance(
-                                pool.token0,
-                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-                                walletAddress,
-                                token0AmountBigInt,
-                                provider!
-                            );
-
-                        if (token0AllowanceForUniswap < token0AmountBigInt) {
-                            onProgress(`Approving ${pool.token0Symbol}...`, 85);
-                            await approveToken(
-                                pool.token0,
-                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-                                walletAddress,
-                                token0AmountBigInt,
-                                provider!,
-                                sendTransaction
-                            );
-                        }
-
-                        const token1AllowanceForUniswap =
-                            await checkTokenAllowance(
-                                pool.token1,
-                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-                                walletAddress,
-                                token1AmountBigInt,
-                                provider!
-                            );
-
-                        if (token1AllowanceForUniswap < token1AmountBigInt) {
-                            onProgress(`Approving ${pool.token1Symbol}...`, 90);
-                            await approveToken(
-                                pool.token1,
-                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-                                walletAddress,
-                                token1AmountBigInt,
-                                provider!,
-                                sendTransaction
-                            );
-                        }
-                    }
+                    await processPoolInvestment({
+                        poolInfo: conservativePools[0],
+                        amountToInvestToPool: conservativeInvestmentAmountUsd,
+                        walletAddress,
+                        onProgress,
+                        onComplete,
+                        sendTransaction,
+                        swapTokens,
+                        provider: provider!,
+                        checkTokenAllowance,
+                        approveToken,
+                    });
                 }
 
                 onProgress('Adding liquidity to pools...', 95);
@@ -559,9 +259,15 @@ export function InvestmentWorkflow({
                 setRecommendationsReady(false);
             }
         };
-
-        processSwaps();
-    }, [recommendationsReady, recommendationsResponse, user?.wallet?.address]);
+        if (amountToInvest > 0) processSwaps();
+    }, [
+        recommendationsReady,
+        recommendationsResponse,
+        user,
+        amountToInvest,
+        riskyInvestmentAmountUsd,
+        conservativeInvestmentAmountUsd,
+    ]);
 
     return null; // This component doesn't render anything
 }

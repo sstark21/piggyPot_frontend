@@ -4,7 +4,6 @@ import {
     ApproveTransactionResponse,
 } from '@/types/1inch/allowance';
 import { call1inchAPI } from '@/libs/1inch/callApi';
-import { USDC_ADDRESS } from '@/config/constants';
 import { UseApproveReturn, UseApproveState } from '@/types/1inch/allowance';
 
 export function use1inchApprove(): UseApproveReturn {

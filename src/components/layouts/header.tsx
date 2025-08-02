@@ -2,12 +2,8 @@
 
 import { Box, Button, Flex, Image, IconButton, Text } from '@chakra-ui/react';
 import { PiUserBold } from 'react-icons/pi';
-import { formatUSD } from '@/libs/index';
-import { useUserContext } from '@/components/providers/userProvider';
 
 const Header = () => {
-    const { balanceUSD, isBalanceLoading } = useUserContext();
-
     return (
         <Box
             as="header"
@@ -31,14 +27,12 @@ const Header = () => {
                     <Image
                         src="/images/piggy_pot_logo.svg"
                         height="40px"
-                        alt="Piggy Pot Logo"
                         objectFit="contain"
                         marginRight="15px"
                     />
                     <Image
                         src="/images/piggy_pot_title.svg"
                         height="30px"
-                        alt="Piggy Pot Title"
                         objectFit="contain"
                         marginLeft="15px"
                     />
@@ -49,18 +43,14 @@ const Header = () => {
                     alignItems="center"
                     justifyContent="center"
                 >
-                    {isBalanceLoading ? (
-                        <Text>Loading balance...</Text>
-                    ) : (
-                        <Text
-                            fontSize="20px"
-                            fontWeight="bold"
-                            fontFamily="Inter"
-                            px="12px"
-                        >
-                            {formatUSD(balanceUSD || 0)}
-                        </Text>
-                    )}
+                    {/* <Text
+                        fontSize="20px"
+                        fontWeight="bold"
+                        fontFamily="Inter"
+                        px="12px"
+                    >
+                        {formatUSD(user?.balance.balanceUSD || 0)}
+                    </Text> */}
 
                     <Button
                         borderRadius="12px"

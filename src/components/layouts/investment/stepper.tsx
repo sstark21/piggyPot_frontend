@@ -35,6 +35,20 @@ export const InvestmentStepper = () => {
     const router = useRouter();
 
     useEffect(() => {
+        if (
+            investmentTypeShare.risky === 50 &&
+            investmentTypeShare.conservative === 50
+        ) {
+            setInvestmentTypeShare({
+                risky: 50,
+                conservative: 50,
+                riskyAmount: amountToInvest * 0.5,
+                conservativeAmount: amountToInvest * 0.5,
+            });
+        }
+    }, [amountToInvest]);
+
+    useEffect(() => {
         if (!authenticated && ready) {
             router.push('/');
         }

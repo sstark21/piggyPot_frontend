@@ -1,321 +1,269 @@
-import { useState, useEffect } from "react";
-import { usePoolsRecommendations } from "@/hooks/usePoolsRecommendations";
-import { useSwap } from "@/hooks/useSwap";
-import { useApprove } from "@/hooks/useApprove";
-import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
-import { USDC_ADDRESS, USDC_DECIMALS } from "@/config/constants";
-import { convertWeiToHumanReadable } from "@/utils/converter";
+import { useState, useEffect } from 'react';
+import { usePoolsRecommendations } from '@/hooks/usePoolsRecommendations';
+import { useSwap } from '@/hooks/useSwap';
+import { use1inchApprove } from '@/hooks/use1inchApprove';
+import {
+    ConnectedWallet,
+    usePrivy,
+    useSendTransaction,
+    useWallets,
+} from '@privy-io/react-auth';
+import { USDC_ADDRESS, USDC_DECIMALS } from '@/config/constants';
+import { convertHumanReadableToWei } from '@/utils/converter';
+import { ethers } from 'ethers';
+import { useUniswapApprove } from '@/hooks/useUniswapApprove';
+import { processPoolInvestment } from './processPool';
 
 interface InvestmentWorkflowProps {
-  userIdRaw: string;
-  amount: number;
-  riskyAmount: number;
-  conservativeAmount: number;
-  onProgress: (step: string, progress: number) => void;
-  onComplete: () => void;
-  onError: (error: string) => void;
+    userIdRaw: string;
+    amountToInvest: number;
+    riskyInvestmentAmountUsd: number;
+    conservativeInvestmentAmountUsd: number;
+    onProgress: (step: string, progress: number) => void;
+    onComplete: () => void;
+    onError: (error: string) => void;
 }
 
-// const convertToBigInt = (amount: number, decimals: number): bigint => {
-//   return BigInt(Math.floor(amount * Math.pow(10, decimals)));
-// };
-
 export function InvestmentWorkflow({
-  userIdRaw,
-  amount,
-  riskyAmount,
-  conservativeAmount,
-  onProgress,
-  onComplete,
-  onError,
-}: InvestmentWorkflowProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [recommendationsReady, setRecommendationsReady] = useState(false);
-  const { user } = usePrivy();
-
-  // Initialize hooks
-  const {
-    callRecommendations,
-    isLoading: isRecommendationsLoading,
-    isFinished: isRecommendationsFinished,
-    response: recommendationsResponse,
-    error: recommendationsError,
-  } = usePoolsRecommendations(
     userIdRaw,
-    amount,
-    riskyAmount,
-    conservativeAmount
-  );
+    amountToInvest,
+    riskyInvestmentAmountUsd,
+    conservativeInvestmentAmountUsd,
+    onProgress,
+    onComplete,
+    onError,
+}: InvestmentWorkflowProps) {
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [recommendationsReady, setRecommendationsReady] = useState(false);
+    const { user } = usePrivy();
+    const { wallets } = useWallets();
+    const [provider, setProvider] = useState<ethers.providers.Provider | null>(
+        null
+    );
 
-  console.log("recommendationsResponse", recommendationsResponse);
-  console.log("isRecommendationsFinished", isRecommendationsFinished);
-  console.log("recommendationsError", recommendationsError);
+    console.log('totatl amount to invest: ', amountToInvest);
+    console.log('risky amount to invest: ', riskyInvestmentAmountUsd);
+    console.log(
+        'conservative amount to invest: ',
+        conservativeInvestmentAmountUsd
+    );
 
-  const { swapTokens } = useSwap();
-  const { checkAllowance, approveIfNeeded } = useApprove();
-  const { sendTransaction: privySendTransaction } = useSendTransaction();
+    useEffect(() => {
+        const getProvider = async () => {
+            const primaryWallet = wallets.find(
+                (w: ConnectedWallet) => w.address === user?.wallet?.address
+            );
 
-  const sendTransaction = async (tx: {
-    to: string;
-    data: string;
-    value: bigint;
-  }) => {
-    const result = await privySendTransaction({
-      to: tx.to,
-      data: tx.data,
-      value: tx.value,
-    });
-    return result.hash;
-  };
+            if (primaryWallet) {
+                const provider = new ethers.providers.Web3Provider(
+                    await primaryWallet.getEthereumProvider()
+                );
+                setProvider(provider);
+            }
+        };
 
-  // Effect 1: Fetch recommendations
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      if (isProcessing || !user?.wallet?.address || amount <= 0) return;
+        getProvider();
+    }, [wallets]);
 
-      setIsProcessing(true);
-      setRecommendationsReady(false);
+    // Initialize hooks
+    const {
+        callRecommendations,
+        isLoading: isRecommendationsLoading,
+        isFinished: isRecommendationsFinished,
+        response: recommendationsResponse,
+        error: recommendationsError,
+    } = usePoolsRecommendations(
+        userIdRaw,
+        amountToInvest,
+        riskyInvestmentAmountUsd,
+        conservativeInvestmentAmountUsd
+    );
 
-      try {
-        onProgress("Fetching pool recommendations...", 0);
-        await callRecommendations();
+    const { swapTokens } = useSwap();
+    const { check1inchAllowance, approve1inchIfNeeded } = use1inchApprove();
+    const { checkTokenAllowance, approveToken, revokeToken } =
+        useUniswapApprove();
+    const { sendTransaction: privySendTransaction } = useSendTransaction();
 
-        // Wait a bit for the state to update
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        if (recommendationsError) {
-          throw new Error(
-            `Failed to get recommendations: ${recommendationsError}`
-          );
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch recommendations";
-        onError(errorMessage);
-        setIsProcessing(false);
-      }
+    const sendTransaction = async (tx: {
+        to: string;
+        data: string;
+        value: bigint;
+    }) => {
+        const result = await privySendTransaction({
+            to: tx.to,
+            data: tx.data,
+            value: tx.value,
+        });
+        return result.hash;
     };
 
-    fetchRecommendations();
-  }, [user, amount]);
+    // Effect 1: Fetch recommendations
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            if (isProcessing || !user?.wallet?.address || amountToInvest <= 0)
+                return;
 
-  useEffect(() => {
-    if (isRecommendationsFinished) {
-      if (recommendationsResponse?.data?.recommendations) {
-        setRecommendationsReady(true);
-        onProgress("Recommendations received, processing swaps...", 25);
-      } else {
-        onError("No recommendations received");
-      }
-    }
-  }, [
-    recommendationsResponse,
-    isRecommendationsFinished,
-    recommendationsError,
-  ]);
+            setIsProcessing(true);
+            setRecommendationsReady(false);
 
-  // Effect 2: Process swaps after recommendations are ready
-  useEffect(() => {
-    const processSwaps = async () => {
-      console.log("Current recommendations", recommendationsResponse);
+            try {
+                onProgress('Fetching pool recommendations...', 0);
+                await callRecommendations();
 
-      if (
-        !recommendationsReady ||
-        !recommendationsResponse?.data?.recommendations ||
-        !user?.wallet?.address
-      )
-        return;
+                // Wait a bit for the state to update
+                await new Promise(resolve => setTimeout(resolve, 100));
 
-      const walletAddress = user.wallet.address;
+                if (recommendationsError) {
+                    throw new Error(
+                        `Failed to get recommendations: ${recommendationsError}`
+                    );
+                }
+            } catch (error) {
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to fetch recommendations';
+                onError(errorMessage);
+                setIsProcessing(false);
+            }
+        };
 
-      try {
-        const recommendedPools =
-          recommendationsResponse.data.recommendations || [];
-        console.log("Recommended pools:", recommendedPools);
+        fetchRecommendations();
+    }, [user, amountToInvest]);
 
-        // Separate pools by risk level
-        const riskyPools = recommendedPools.filter(
-          (pool: unknown) =>
-            !(pool as { isStablecoinPool: boolean }).isStablecoinPool
-        );
-        const conservativePools = recommendedPools.filter(
-          (pool: unknown) =>
-            (pool as { isStablecoinPool: boolean }).isStablecoinPool
-        );
-
-        console.log("Risky pools:", riskyPools);
-        console.log("Conservative pools:", conservativePools);
-
-        // Calculate amounts per pool (handle case where there might be only 1 pool)
-        const riskyAmountPerPool =
-          riskyPools.length > 0 ? riskyAmount / riskyPools.length : 0;
-        const conservativeAmountPerPool =
-          conservativePools.length > 0
-            ? conservativeAmount / conservativePools.length
-            : 0;
-
-        // Check USDC allowance once before processing pools
-        const totalRiskyAmount = riskyAmount;
-        const totalConservativeAmount = conservativeAmount;
-        const totalAmount = totalRiskyAmount + totalConservativeAmount;
-
-        if (totalAmount > 0) {
-          onProgress("Checking USDC allowance...", 20);
-
-          const totalAmountBigInt = convertWeiToHumanReadable(
-              totalAmount,
-              USDC_DECIMALS,
-              true 
-            ) as bigint
-
-          const allowance = await checkAllowance(
-            USDC_ADDRESS,
-            walletAddress,
-            totalAmountBigInt
-          );
-
-          if (allowance < totalAmountBigInt) {
-            onProgress("Approving USDC...", 22);
-            await approveIfNeeded(
-              USDC_ADDRESS,
-              walletAddress,
-              totalAmountBigInt,
-              sendTransaction
-            );
-          }
+    useEffect(() => {
+        if (isRecommendationsFinished) {
+            if (recommendationsResponse?.data?.recommendations) {
+                setRecommendationsReady(true);
+                onProgress('Recommendations received, processing swaps...', 25);
+            } else {
+                onError('No recommendations received');
+            }
         }
+    }, [
+        recommendationsResponse,
+        isRecommendationsFinished,
+        recommendationsError,
+    ]);
 
-        if (riskyPools.length > 0) {
-          for (let i = 0; i < riskyPools.length; i++) {
-            const pool = riskyPools[i] as {
-              token0: string;
-              token1: string;
-              token0Decimals: number;
-              token1Decimals: number;
-            };
-            const poolAmount = riskyAmountPerPool;
+    // Effect 2: Process swaps after recommendations are ready
+    useEffect(() => {
+        const processSwaps = async () => {
+            if (
+                !recommendationsReady ||
+                !recommendationsResponse?.data?.recommendations ||
+                !user?.wallet?.address
+            )
+                return;
 
-            onProgress(
-              `Swapping tokens for risky pool ${i + 1}/${riskyPools.length}...`,
-              25 + (i * 25) / riskyPools.length
-            );
+            const walletAddress = user.wallet.address;
 
-            const token0Amount = Math.ceil(poolAmount / 2);
-            const token1Amount = poolAmount - token0Amount;
+            try {
+                const recommendedPools =
+                    recommendationsResponse.data.recommendations || [];
 
-            const token0AmountBigInt = convertWeiToHumanReadable(
-              token0Amount,
-              6
-            );
-            const token1AmountBigInt = convertWeiToHumanReadable(
-              token1Amount,
-              6
-            );
+                // Separate pools by risk level: non-risky and risky
+                const riskyPools = recommendedPools.filter(
+                    (pool: unknown) =>
+                        !(pool as { isStablecoinPool: boolean })
+                            .isStablecoinPool
+                );
+                const conservativePools = recommendedPools.filter(
+                    (pool: unknown) =>
+                        (pool as { isStablecoinPool: boolean }).isStablecoinPool
+                );
 
-            if (token0Amount > 0) {
-              onProgress(
-                `Swapping USDC to ${pool.token0}...`,
-                25 + (i * 25) / riskyPools.length
-              );
-              await swapTokens(
-                pool.token0,
-                token0AmountBigInt.toString(),
-                walletAddress
-              );
+                // CHECK IF USER HAS ENOUGH USDC TO INVEST
+                // THEN CHECK IF 1INCH HAS ALLOWANCE TO SPEND USDC
+                if (amountToInvest > 0) {
+                    onProgress('Checking USDC allowance...', 20);
+
+                    const totalAmountToInvestBigInt = convertHumanReadableToWei(
+                        amountToInvest,
+                        USDC_DECIMALS
+                    );
+
+                    const allowance = await check1inchAllowance(
+                        USDC_ADDRESS,
+                        walletAddress,
+                        totalAmountToInvestBigInt
+                    );
+
+                    console.log('Current wallet allowance for USDC', {
+                        current: allowance,
+                        toBe: totalAmountToInvestBigInt,
+                    });
+
+                    if (allowance < totalAmountToInvestBigInt) {
+                        onProgress('Approving USDC...', 25);
+                        await approve1inchIfNeeded(
+                            USDC_ADDRESS,
+                            walletAddress,
+                            totalAmountToInvestBigInt,
+                            sendTransaction
+                        );
+                    }
+                } else {
+                    onError('Amount to invest is 0');
+                }
+
+                // SWAP AND MINT UNISWAP V3 POSITIONS FOR RISKY POOL IF IT EXISTS
+                if (riskyPools.length > 0) {
+                    await processPoolInvestment({
+                        poolInfo: riskyPools[0],
+                        amountToInvestToPool: riskyInvestmentAmountUsd,
+                        walletAddress,
+                        onProgress,
+                        onComplete,
+                        sendTransaction,
+                        swapTokens,
+                        provider: provider!,
+                        checkTokenAllowance,
+                        approveToken,
+                    });
+                }
+
+                // SWAP AND MINT UNISWAP V3 POSITIONS FOR CONSERVATIVE POOL IF IT EXISTS
+                if (conservativePools.length > 0) {
+                    await processPoolInvestment({
+                        poolInfo: conservativePools[0],
+                        amountToInvestToPool: conservativeInvestmentAmountUsd,
+                        walletAddress,
+                        onProgress,
+                        onComplete,
+                        sendTransaction,
+                        swapTokens,
+                        provider: provider!,
+                        checkTokenAllowance,
+                        approveToken,
+                    });
+                }
+
+                onProgress('Adding liquidity to pools...', 95);
+
+                onProgress('Investment completed successfully!', 100);
+                onComplete();
+            } catch (error) {
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : 'Investment failed';
+                onError(errorMessage);
+            } finally {
+                setIsProcessing(false);
+                setRecommendationsReady(false);
             }
+        };
+        if (amountToInvest > 0) processSwaps();
+    }, [
+        recommendationsReady,
+        recommendationsResponse,
+        user,
+        amountToInvest,
+        riskyInvestmentAmountUsd,
+        conservativeInvestmentAmountUsd,
+    ]);
 
-            if (token1Amount > 0) {
-              onProgress(
-                `Swapping USDC to ${pool.token1}...`,
-                25 + (i * 25) / riskyPools.length
-              );
-              await swapTokens(
-                pool.token1,
-                token1AmountBigInt.toString(),
-                walletAddress
-              );
-            }
-          }
-        }
-
-        if (conservativePools.length > 0) {
-          for (let i = 0; i < conservativePools.length; i++) {
-            const pool = conservativePools[i] as {
-              token0: string;
-              token1: string;
-              token0Decimals: number;
-              token1Decimals: number;
-            };
-            const poolAmount = conservativeAmountPerPool;
-
-            onProgress(
-              `Swapping tokens for conservative pool ${i + 1}/${
-                conservativePools.length
-              }...`,
-              50 + (i * 25) / conservativePools.length
-            );
-
-            const token0Amount = Math.ceil(poolAmount / 2);
-            const token1Amount = poolAmount - token0Amount;
-
-            const token0AmountBigInt = convertWeiToHumanReadable(
-              token0Amount,
-              6
-            );
-            const token1AmountBigInt = convertWeiToHumanReadable(
-              token1Amount,
-              6
-            );
-
-            if (token0Amount > 0) {
-              onProgress(
-                `Swapping USDC to ${pool.token0}...`,
-                50 + (i * 25) / conservativePools.length
-              );
-              await swapTokens(
-                pool.token0,
-                token0AmountBigInt.toString(),
-                walletAddress
-              );
-            }
-
-            // Swap USDC to token1
-            if (token1Amount > 0) {
-              onProgress(
-                `Swapping USDC to ${pool.token1}...`,
-                50 + (i * 25) / conservativePools.length
-              );
-              await swapTokens(
-                pool.token1,
-                token1AmountBigInt.toString(),
-                walletAddress
-              );
-            }
-          }
-        }
-
-        onProgress("Adding liquidity to pools...", 75);
-
-        // Step 3: Add liquidity (stub for now)
-        // TODO: Implement liquidity provision
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate liquidity provision
-
-        onProgress("Investment completed successfully!", 100);
-        onComplete();
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Investment failed";
-        onError(errorMessage);
-      } finally {
-        setIsProcessing(false);
-        setRecommendationsReady(false);
-      }
-    };
-
-    processSwaps();
-  }, [recommendationsReady, recommendationsResponse, user?.wallet?.address]);
-
-  return null; // This component doesn't render anything
+    return null; // This component doesn't render anything
 }

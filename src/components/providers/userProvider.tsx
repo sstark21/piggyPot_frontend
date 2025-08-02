@@ -1,23 +1,31 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { usePrivy, Wallet } from '@privy-io/react-auth';
+import {
+    LoginModalOptions,
+    usePrivy,
+    User,
+    Wallet,
+} from '@privy-io/react-auth';
+import { MouseEvent } from 'react';
 import { useBalance } from '@/hooks/useBalance';
 
 interface UserContextType {
-    // Privy данные
-    user: any;
+    // Privy data
+    user: User | null;
     authenticated: boolean;
     ready: boolean;
     wallet: Wallet | null;
 
-    // Баланс
+    // balance
     balanceUSD: number | null;
     isBalanceLoading: boolean;
     balanceError: string | null;
 
-    // Методы
-    login: (options?: any) => void;
+    // Methods
+    login: (
+        options?: LoginModalOptions | MouseEvent<Element, MouseEvent>
+    ) => void;
     logout: () => Promise<void>;
     refreshBalance: () => void;
 }
@@ -35,7 +43,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [wallet, setWallet] = useState<Wallet | null>(null);
     const [hasLoadedBalance, setHasLoadedBalance] = useState(false);
 
-    // Устанавливаем кошелек
+    // Set wallet
     useEffect(() => {
         if (user?.wallet) {
             setWallet(user.wallet);
@@ -44,7 +52,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
     }, [user?.wallet]);
 
-    // Загружаем баланс
+    // Load balance
     useEffect(() => {
         if (authenticated && wallet?.address && !hasLoadedBalance) {
             console.log('Loading balance for wallet:', wallet.address);
@@ -55,23 +63,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const refreshBalance = () => {
         if (wallet?.address) {
-            setHasLoadedBalance(false); // Сбросить флаг для перезагрузки
+            setHasLoadedBalance(false); // reset flag to reload
         }
     };
 
     const value: UserContextType = {
-        // Privy данные
+        // Privy data
         user,
         authenticated,
         ready,
         wallet,
 
-        // Баланс
+        // balance
         balanceUSD,
         isBalanceLoading,
         balanceError,
 
-        // Методы
+        // Methods
         login,
         logout,
         refreshBalance,

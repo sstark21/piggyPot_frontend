@@ -5,6 +5,7 @@ import { ChakraCustomProvider } from '@/components/providers/chakraProvider';
 import Header from '@/components/ui/header';
 import { UserProvider } from '@/components/providers/userProvider';
 import { PrivyProviderComponent } from '@/components/providers/privyProvider';
+import { QueryProvider } from '@/components/providers/queryProvider';
 
 const inter = Inter({
     variable: '--font-inter',
@@ -27,8 +28,10 @@ export default function RootLayout({
                 <ChakraCustomProvider>
                     <PrivyProviderComponent>
                         <UserProvider>
-                            <Header />
-                            {children}
+                            <QueryProvider>
+                                <Header />
+                                {children}
+                            </QueryProvider>
                         </UserProvider>
                     </PrivyProviderComponent>
                 </ChakraCustomProvider>

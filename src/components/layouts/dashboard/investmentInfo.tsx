@@ -1,7 +1,7 @@
 import { Button, Flex, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import { useUserContext } from '@/components/providers/userProvider';
-import { formatUSD } from '@/libs';
+import { formatUSD } from '@/libs/index';
 import { IoWallet } from 'react-icons/io5';
 
 const TOTAL_INVESTMENT_MOCK = 1127.56;
@@ -11,8 +11,7 @@ const PROFIT_PERCENTAGE_MOCK = 2.44;
 export const InvestmentInfoLayout = () => {
     const router = useRouter();
 
-    const { authenticated, ready, balanceUSD } =
-        useUserContext();
+    const { authenticated, ready, balanceUSD } = useUserContext();
     const formatted = formatUSD(TOTAL_INVESTMENT_MOCK);
     const parts = formatted.split('.');
     if (!ready) {

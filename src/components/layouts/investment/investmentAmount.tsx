@@ -1,8 +1,7 @@
-import { Box, Button, Flex, Input, Text } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
-import { formatUSD } from '@/libs';
+import { Button, Flex, Input, Text } from '@chakra-ui/react';
+import { useState } from 'react';
+import { formatUSD } from '@/libs/index';
 import { useUserContext } from '@/components/providers/userProvider';
-import router from 'next/router';
 
 export const InvestmentAmount = ({
     amount,
@@ -21,7 +20,7 @@ export const InvestmentAmount = ({
     const handleInputChange = (value: string) => {
         const digitsOnly = value.replace(/\D/g, '');
 
-        const parsedValue = digitsOnly === '' ? 0 : parseInt(digitsOnly) || 0;
+        const parsedValue = digitsOnly === '' ? 0 : Number(digitsOnly) || 0;
         if (balanceUSD && parsedValue > balanceUSD * 100) {
             return;
         }
@@ -51,7 +50,7 @@ export const InvestmentAmount = ({
             </Text>
             <Input
                 height="100px"
-                placeholder="$0.00"
+                placeholder="$0"
                 disabled={isBalanceLoading}
                 value={formatSimpleUSD(parseInt(inputValue) || 0)}
                 onChange={e => handleInputChange(e.target.value)}

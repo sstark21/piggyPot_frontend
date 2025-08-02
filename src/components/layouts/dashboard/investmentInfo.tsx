@@ -1,8 +1,8 @@
-import { Box, Button, Flex, Text } from '@chakra-ui/react';
+import { Button, Flex, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import { useUserContext } from '@/components/providers/userProvider';
 import { formatUSD } from '@/libs';
-import { PiWalletBold } from 'react-icons/pi';
+import { IoWallet } from 'react-icons/io5';
 
 const TOTAL_INVESTMENT_MOCK = 1127.56;
 const PROFIT_VALUE_MOCK = 27.56;
@@ -112,7 +112,7 @@ export const InvestmentInfoLayout = () => {
             >
                 <Flex alignItems="center" gap={2}>
                     <Text>Invest</Text>
-                    <PiWalletBold size={32} />
+                    <IoWallet style={{ width: '30px', height: '30px' }} />
                 </Flex>
             </Button>
         </Flex>

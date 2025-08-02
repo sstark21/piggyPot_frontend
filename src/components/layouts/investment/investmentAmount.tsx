@@ -1,51 +1,99 @@
-import { Input, Text } from "@chakra-ui/react";
-import { useBalance } from "@/hooks/useBalance";
-import { useEffect, useState } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { Box, Button, Flex, Input, Text } from '@chakra-ui/react';
+import { useEffect, useState } from 'react';
+import { formatUSD } from '@/libs';
+import { useUserContext } from '@/components/providers/userProvider';
+import router from 'next/router';
 
 export const InvestmentAmount = ({
-  amount,
-  onAmountChange,
-  setIsAmountExceeded,
+    amount,
+    onAmountChange,
+    setIsAmountExceeded,
+    onNext,
 }: {
-  amount: number | null;
-  onAmountChange: (amount: number) => void;
-  setIsAmountExceeded: (isExceeded: boolean) => void;
+    amount: number | null;
+    onAmountChange: (amount: number) => void;
+    setIsAmountExceeded: (isExceeded: boolean) => void;
+    onNext: () => void;
 }) => {
-  const { user } = usePrivy();
-  const { balanceUSD, isLoading, fetchBalance } = useBalance();
-  const [inputValue, setInputValue] = useState<string>("");
+    const { balanceUSD, isBalanceLoading } = useUserContext();
+    const [inputValue, setInputValue] = useState<string>('');
 
-  useEffect(() => {
-    if (user?.wallet?.address) {
-      fetchBalance(user.wallet.address);
-    }
-  }, [fetchBalance, user?.wallet?.address]);
+    const handleInputChange = (value: string) => {
+        const digitsOnly = value.replace(/\D/g, '');
 
-  const handleInputChange = (value: string) => {
-    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-      setInputValue(value);
-      const parsedValue = value === "" ? 0 : parseFloat(value) || 0;
-      onAmountChange(parsedValue);
+        const parsedValue = digitsOnly === '' ? 0 : parseInt(digitsOnly) || 0;
+        if (balanceUSD && parsedValue > balanceUSD * 100) {
+            return;
+        }
+        setInputValue(digitsOnly);
 
-      if (balanceUSD) {
-        setIsAmountExceeded(parsedValue > balanceUSD);
-      }
-    }
-  };
+        onAmountChange(parsedValue);
 
-  return (
-    <Text fontSize="2xl" fontWeight="bold" textAlign="center">
-      Investment Amount
-      <Text fontSize="sm" color="gray.500">
-        Current balance: {isLoading ? "Loading..." : `${balanceUSD} USD`}
-      </Text>
-      <Input
-        placeholder="0"
-        disabled={isLoading}
-        value={inputValue}
-        onChange={(e) => handleInputChange(e.target.value)}
-      />
-    </Text>
-  );
+        if (balanceUSD) {
+            setIsAmountExceeded(parsedValue > balanceUSD);
+        }
+    };
+
+    const formatSimpleUSD = (amount: number): string => {
+        return `$${(amount / 100).toFixed(2)}`;
+    };
+
+    return (
+        <Flex
+            textAlign="center"
+            gap={4}
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+        >
+            <Text fontSize="24px" fontWeight="bold" fontFamily="Inter">
+                How much do you want to invest?
+            </Text>
+            <Input
+                height="100px"
+                placeholder="$0.00"
+                disabled={isBalanceLoading}
+                value={formatSimpleUSD(parseInt(inputValue) || 0)}
+                onChange={e => handleInputChange(e.target.value)}
+                border="none"
+                borderRadius="16px"
+                backgroundColor="transparent"
+                padding="16px 24px"
+                fontSize="82px"
+                fontWeight="bold"
+                fontFamily="Inter"
+                textAlign="center"
+                _placeholder={{
+                    color: 'gray.400',
+                    fontSize: '82px',
+                    fontWeight: 'bold',
+                    fontFamily: 'Inter',
+                }}
+                _focus={{
+                    border: 'none',
+                    outline: 'none',
+                }}
+            />
+            <Text fontSize="16px" color="gray.200" fontFamily="Inter">
+                {isBalanceLoading
+                    ? 'Loading...'
+                    : `${formatUSD(balanceUSD || 0)} available`}
+            </Text>
+            <Button
+                height="72px"
+                width="180px"
+                backgroundColor="#FD92CA"
+                color="black"
+                borderRadius="16px"
+                padding="16px 28px"
+                fontSize="24px"
+                fontWeight="bold"
+                fontFamily="Inter"
+                disabled={!inputValue}
+                onClick={onNext}
+            >
+                <Text>Continue</Text>
+            </Button>
+        </Flex>
+    );
 };

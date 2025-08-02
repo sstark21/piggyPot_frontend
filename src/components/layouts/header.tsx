@@ -2,7 +2,6 @@
 
 import { Box, Button, Flex, Image, IconButton, Text } from '@chakra-ui/react';
 import { PiUserBold } from 'react-icons/pi';
-import { formatUSD } from '@/libs';
 
 const Header = () => {
     return (

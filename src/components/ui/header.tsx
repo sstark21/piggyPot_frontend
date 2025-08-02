@@ -4,10 +4,11 @@ import { Box, Button, Flex, Image, IconButton, Text } from '@chakra-ui/react';
 import { PiUserBold } from 'react-icons/pi';
 import { formatUSD } from '@/libs/index';
 import { useUserContext } from '@/components/providers/userProvider';
+import { useRouter } from 'next/navigation';
 
 const Header = () => {
     const { balanceUSD, isBalanceLoading } = useUserContext();
-
+    const router = useRouter();
     return (
         <Box
             as="header"
@@ -27,7 +28,13 @@ const Header = () => {
                 mx="auto"
             >
                 <Box flex="1"></Box>
-                <Box display="flex" alignItems="center" justifyContent="center">
+                <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    cursor="pointer"
+                    onClick={() => router.push('/dashboard')}
+                >
                     <Image
                         src="/images/piggy_pot_logo.svg"
                         height="40px"

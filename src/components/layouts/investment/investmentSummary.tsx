@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { InvestmentWorkflow } from './investmentWorkflow';
 import { defineIssue } from '@/utils/issuesProcessing';
 import { formatUSD } from '@/libs';
+import { IoIosArrowRoundBack } from 'react-icons/io';
 
 export const InvestmentSummary = ({
     amountToInvest,
     investmentTypeShare,
     isProcessing,
     setIsProcessing,
+    onBack,
 }: {
     amountToInvest: number;
     investmentTypeShare: {
@@ -20,6 +22,7 @@ export const InvestmentSummary = ({
     };
     isProcessing: boolean;
     setIsProcessing: (processing: boolean) => void;
+    onBack: () => void;
 }) => {
     const { user } = usePrivy();
     const [currentStep, setCurrentStep] = useState('');
@@ -77,8 +80,32 @@ export const InvestmentSummary = ({
             maxW="600px"
             flexDirection="column"
             justifyContent="center"
+            h="100vh"
         >
             <Box display="flex" flexDirection="column" alignItems="center">
+                <Flex alignItems="center" gap={2} position="relative">
+                    <Button
+                        onClick={onBack}
+                        variant="ghost"
+                        color="white"
+                        _hover={{ backgroundColor: 'transparent' }}
+                        style={{
+                            position: 'absolute',
+                            left: '-70px',
+                            top: '13px',
+                        }}
+                    >
+                        <IoIosArrowRoundBack
+                            style={{
+                                width: '60px',
+                                height: '60px',
+                            }}
+                        />
+                    </Button>
+                    <Text fontSize="40px" fontWeight="bold" fontFamily="Inter">
+                        Your investing
+                    </Text>
+                </Flex>
                 <Text fontSize="64px" fontFamily="Inter" fontWeight="900">
                     {formatUSD(investmentTypeShare.conservativeAmount)}
                 </Text>

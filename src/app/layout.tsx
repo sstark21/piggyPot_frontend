@@ -13,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-    title: 'Piggy Pot 2',
-    description: 'Piggy Pot 3',
+    title: 'Piggy Pot',
+    description: 'Piggy Pot',
 };
 
 export default function RootLayout({

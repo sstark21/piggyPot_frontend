@@ -1,32 +1,41 @@
 import { Button, Flex, Input, Text } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatUSD } from '@/libs/index';
 import { useUserContext } from '@/components/providers/userProvider';
+import { IoIosArrowRoundBack } from 'react-icons/io';
 
 export const InvestmentAmount = ({
     amount,
     onAmountChange,
     setIsAmountExceeded,
     onNext,
+    onBack,
 }: {
     amount: number | null;
     onAmountChange: (amount: number) => void;
     setIsAmountExceeded: (isExceeded: boolean) => void;
     onNext: () => void;
+    onBack: () => void;
 }) => {
     const { balanceUSD, isBalanceLoading } = useUserContext();
     const [inputValue, setInputValue] = useState<string>('');
 
+    useEffect(() => {
+        if (amount && amount > 0) {
+            setInputValue((amount * 100).toString());
+        }
+    }, [amount]);
+
     const handleInputChange = (value: string) => {
         const digitsOnly = value.replace(/\D/g, '');
-
         const parsedValue = digitsOnly === '' ? 0 : Number(digitsOnly) || 0;
+
         if (balanceUSD && parsedValue > balanceUSD * 100) {
             return;
         }
-        setInputValue(digitsOnly);
 
-        onAmountChange(parsedValue);
+        setInputValue(digitsOnly);
+        onAmountChange(parsedValue / 100);
 
         if (balanceUSD) {
             setIsAmountExceeded(parsedValue > balanceUSD);
@@ -44,10 +53,31 @@ export const InvestmentAmount = ({
             flexDirection="column"
             alignItems="center"
             justifyContent="center"
+            h="100vh"
         >
-            <Text fontSize="24px" fontWeight="bold" fontFamily="Inter">
-                How much do you want to invest?
-            </Text>
+            <Flex alignItems="center" gap={2} position="relative">
+                <Button
+                    onClick={onBack}
+                    variant="ghost"
+                    color="white"
+                    _hover={{ backgroundColor: 'transparent' }}
+                    style={{
+                        position: 'absolute',
+                        left: '-70px',
+                        top: '13px',
+                    }}
+                >
+                    <IoIosArrowRoundBack
+                        style={{
+                            width: '60px',
+                            height: '60px',
+                        }}
+                    />
+                </Button>
+                <Text fontSize="40px" fontWeight="bold" fontFamily="Inter">
+                    How much do you want to invest?
+                </Text>
+            </Flex>
             <Input
                 height="100px"
                 placeholder="$0"

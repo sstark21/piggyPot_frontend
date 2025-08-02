@@ -1,10 +1,12 @@
 import { Box, Text, Flex, Slider, Button } from '@chakra-ui/react';
+import { IoIosArrowRoundBack } from 'react-icons/io';
 
 export const InvestmentTypes = ({
     amountToInvest,
     shares,
     onSharesChange,
     onNext,
+    onBack,
 }: {
     amountToInvest: number | null;
     shares: {
@@ -20,7 +22,24 @@ export const InvestmentTypes = ({
         conservativeAmount: number;
     }) => void;
     onNext: () => void;
-}) => {
+    onBack: () => void;
+    }) => {
+    const handleSliderChange = ({ value }: { value: number[] }) => {
+        console.log('handleSliderChange', value, amountToInvest);
+            const riskyPct = Math.round(value[0] || 0);
+            const conservativePct = 100 - riskyPct;
+
+            const totalAmount = amountToInvest || 0;
+            const riskyAmount = (totalAmount * riskyPct) / 100;
+            const conservativeAmount = (totalAmount * conservativePct) / 100;
+
+            onSharesChange({
+                risky: riskyPct,
+                conservative: conservativePct,
+                riskyAmount: riskyAmount,
+                conservativeAmount: conservativeAmount,
+            });
+        };
     return (
         <Flex
             gap={6}
@@ -29,6 +48,7 @@ export const InvestmentTypes = ({
             flexDirection="column"
             justifyContent="center"
             maxW="600px"
+            h="100vh"
         >
             <Box
                 w="full"
@@ -38,15 +58,29 @@ export const InvestmentTypes = ({
                 alignItems="center"
                 gap={4}
             >
-                <Text
-                    mb={4}
-                    textAlign="center"
-                    fontSize="40px"
-                    fontWeight="bold"
-                    fontFamily="Inter"
-                >
-                    How much you want to use for risky investments?
-                </Text>
+                <Flex alignItems="center" gap={2} position="relative">
+                    <Button
+                        onClick={onBack}
+                        variant="ghost"
+                        color="white"
+                        _hover={{ backgroundColor: 'transparent' }}
+                        style={{
+                            position: 'absolute',
+                            left: '-70px',
+                            top: '13px',
+                        }}
+                    >
+                        <IoIosArrowRoundBack
+                            style={{
+                                width: '60px',
+                                height: '60px',
+                            }}
+                        />
+                    </Button>
+                    <Text fontSize="40px" fontWeight="bold" fontFamily="Inter">
+                        How much you want to use for risky investments?
+                    </Text>
+                </Flex>
 
                 <Slider.Root
                     value={[shares.risky]}
@@ -54,18 +88,7 @@ export const InvestmentTypes = ({
                     max={100}
                     step={1}
                     w="full"
-                    onValueChange={({ value }) => {
-                        const riskyPct = Math.round(value[0] || 0);
-                        const conservativePct = 100 - riskyPct;
-                        onSharesChange({
-                            risky: riskyPct,
-                            conservative: conservativePct,
-                            riskyAmount:
-                                ((amountToInvest || 0) * riskyPct) / 100,
-                            conservativeAmount:
-                                ((amountToInvest || 0) * conservativePct) / 100,
-                        });
-                    }}
+                    onValueChange={handleSliderChange}
                 >
                     <Slider.Control>
                         <Slider.Track bg="gray.700" h="8px" borderRadius="4px">

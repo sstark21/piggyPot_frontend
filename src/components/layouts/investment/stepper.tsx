@@ -13,6 +13,7 @@ import { InvestmentTypes } from './investmentTypes';
 import { InvestmentAmount } from './investmentAmount';
 import { InvestmentSummary } from './investmentSummary';
 
+
 export const InvestmentStepper = () => {
     const { authenticated, ready } = usePrivy();
     const [amountToInvest, setAmountToInvest] = useState<number>(0);
@@ -61,6 +62,7 @@ export const InvestmentStepper = () => {
                 onAmountChange={setAmountToInvest}
                 setIsAmountExceeded={setIsAmountExceeded}
                 onNext={() => setStep(1)}
+                onBack={() => router.push('/dashboard')}
             />
         ),
         1: (
@@ -69,6 +71,7 @@ export const InvestmentStepper = () => {
                 shares={investmentTypeShare}
                 onSharesChange={setInvestmentTypeShare}
                 onNext={() => setStep(2)}
+                onBack={() => setStep(0)}
             />
         ),
         2: (
@@ -77,90 +80,43 @@ export const InvestmentStepper = () => {
                 investmentTypeShare={investmentTypeShare}
                 isProcessing={isProcessing}
                 setIsProcessing={setIsProcessing}
+                onBack={() => setStep(1)}
             />
         ),
     };
 
-    const canProceed = () => {
-        switch (step) {
-            case 0:
-                return amountToInvest && amountToInvest > 0;
-            case 1:
-                return (
-                    investmentTypeShare.risky +
-                        investmentTypeShare.conservative ===
-                    100
-                );
-            case 2:
-                return amountToInvest && amountToInvest > 0;
-            case 3:
-                return amountToInvest && amountToInvest > 0;
-            default:
-                return false;
-        }
-    };
-
-    const handleNext = () => {
-        if (canProceed() && step < 3) {
-            setStep(step + 1);
-        }
-    };
-
-    const handleBack = () => {
-        if (step > 0) {
-            setStep(step - 1);
-        }
-    };
-
-    const handleClose = () => {
-        router.push('/dashboard');
-    };
+    // const canProceed = () => {
+    //     switch (step) {
+    //         case 0:
+    //             return amountToInvest && amountToInvest > 0;
+    //         case 1:
+    //             return (
+    //                 investmentTypeShare.risky +
+    //                     investmentTypeShare.conservative ===
+    //                 100
+    //             );
+    //         case 2:
+    //             return amountToInvest && amountToInvest > 0;
+    //         case 3:
+    //             return amountToInvest && amountToInvest > 0;
+    //         default:
+    //             return false;
+    //     }
+    // };
 
     return (
         <Container maxW="container.md" py={8} mx="auto">
             <VStack gap={8} alignItems="stretch">
-                {/* Navigation Buttons */}
-                {step < 3 && (
-                    <HStack justify="space-between" pt={6}>
-                        <Button
-                            onClick={handleBack}
-                            disabled={step === 0}
-                            variant="outline"
-                        >
-                            Back
-                        </Button>
-
-                        <HStack gap={4}>
-                            <Button
-                                onClick={handleClose}
-                                variant="ghost"
-                                colorScheme="red"
-                            >
-                                Close
-                            </Button>
-
-                            {step < 2 && (
-                                <Button
-                                    onClick={handleNext}
-                                    disabled={!canProceed()}
-                                    colorScheme="blue"
-                                >
-                                    Next
-                                </Button>
-                            )}
-                        </HStack>
-                    </HStack>
-                )}
                 {/* Step Content */}
                 <Flex minH="400px" align="center" justify="center">
                     {stepsMapper[step]}
                 </Flex>
-                {isAmountExceeded && (
+                {/* {isAmountExceeded && (
                     <Text color="red.500" fontSize="sm" mt={2}>
                         ⚠️ Amount exceeds your balance. Please enter a smaller
                         amount.
                     </Text>
-                )}
+                )} */}
             </VStack>
         </Container>
     );

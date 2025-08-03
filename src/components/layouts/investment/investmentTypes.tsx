@@ -1,4 +1,4 @@
-import { Box, Text, Flex, Slider, Button } from '@chakra-ui/react';
+import { Box, Text, Flex, Slider, Button, Popover } from '@chakra-ui/react';
 import { IoIosArrowRoundBack } from 'react-icons/io';
 
 export const InvestmentTypes = ({
@@ -96,7 +96,7 @@ export const InvestmentTypes = ({
                     onValueChange={handleSliderChange}
                 >
                     <Slider.Control>
-                        <Slider.Track bg="gray.700" h="8px" borderRadius="4px">
+                        <Slider.Track bg="gray.500" h="8px" borderRadius="4px">
                             <Slider.Range bg="#FD92CA" />
                         </Slider.Track>
                         <Slider.Thumb
@@ -145,6 +145,61 @@ export const InvestmentTypes = ({
                 >
                     <Text>Continue</Text>
                 </Button>
+
+                <Popover.Root>
+                    <Popover.Trigger>
+                        <Box
+                            as="span"
+                            fontSize="20px"
+                            color="gray.400"
+                            cursor="help"
+                            fontFamily="Inter"
+                            _hover={{ color: 'gray.200' }}
+                            textDecoration="underline"
+                            mt={4}
+                        >
+                            What means risky investments?
+                        </Box>
+                    </Popover.Trigger>
+                    <Popover.Positioner
+                    >
+                        <Popover.Content
+                            bg="gray.800"
+                            border="none"
+                            borderRadius="16px"
+                            p={4}
+                        >
+                            <Popover.Body>
+                                <Text
+                                    fontSize="14px"
+                                    color="gray.300"
+                                    fontFamily="Inter"
+                                    lineHeight="1.6"
+                                >
+                                    Risky assets are investment
+                                    opportunities with the potential for
+                                    exceptional returns — but also with a
+                                    heightened risk of volatility and capital
+                                    loss. On our platform, these typically
+                                    involve swap-based strategies with unstable
+                                    liquidity, sudden market shifts, or limited
+                                    historical data.
+                                    <br />
+                                    <br />
+                                    What sets us apart: the
+                                    classification of an asset as high-yield and
+                                    high-risk is not manual — it is the result
+                                    of real-time analysis by an on-chain agent
+                                    that processes a large set of metrics and
+                                    data points. The agent continuously monitors
+                                    market conditions, swap parameters, and
+                                    internal risk indicators to make data-driven
+                                    decisions.
+                                </Text>
+                            </Popover.Body>
+                        </Popover.Content>
+                    </Popover.Positioner>
+                </Popover.Root>
             </Box>
         </Flex>
     );

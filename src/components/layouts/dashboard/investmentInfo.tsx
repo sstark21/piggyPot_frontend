@@ -6,7 +6,8 @@ import { formatUSD } from '@/libs/index';
 import { IoWallet } from 'react-icons/io5';
 import { FaHistory } from 'react-icons/fa';
 import { LoadingComponent } from '@/components/ui/loading';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { usePortfolio } from '@/hooks/usePortfolio';
 
 const HISTORY_MOCK: { date: string; description: string; amount: number }[] = [
     {
@@ -38,11 +39,24 @@ const PROFIT_PERCENTAGE_MOCK = 2.44;
 export const InvestmentInfoLayout = () => {
     const router = useRouter();
 
-    const { authenticated, ready, balanceUSD } = useUserContext();
+    const { authenticated, ready, balanceUSD, user } = useUserContext();
+    const { uniswapValue, isLoading, error, fetchPortfolio } = usePortfolio();
 
-    // const formatted = formatUSD(balanceUSD!);
-    const investedAmount = formatUSD(TOTAL_INVESTMENT_MOCK);
-    const parts = investedAmount.split('.');
+    const [investedAmount, setInvestedAmount] = useState(0);
+
+    useEffect(() => {
+        if (user?.wallet?.address) {
+            fetchPortfolio(user.wallet.address);
+        }
+    }, [user?.wallet?.address, ready]);
+
+    useEffect(() => {
+        console.log('uniswapValue:', uniswapValue);
+        setInvestedAmount(uniswapValue || 0);
+    }, [uniswapValue]);
+
+    const investedAmountFormatted = formatUSD(investedAmount);
+    const parts = investedAmountFormatted.split('.');
 
     if (!ready) {
         return (

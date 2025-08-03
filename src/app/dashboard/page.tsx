@@ -6,16 +6,18 @@ import { useUserContext } from '@/components/providers/userProvider';
 import { LoadingComponent } from '@/components/ui/loading';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePortfolio } from '@/hooks/usePortfolio';
 
 export default function DashboardPage() {
-    const { authenticated, ready } = useUserContext();
+    const { authenticated, ready, user } = useUserContext();
+
     const router = useRouter();
 
     useEffect(() => {
         if (!authenticated && ready) {
             router.push('/');
         }
-    }, [authenticated, ready, router]);
+	}, [authenticated, ready, router]);
 
     // Show loading while checking authentication
     if (!ready) {

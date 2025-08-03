@@ -94,7 +94,7 @@ const Header = () => {
                                     {formatUSD(balanceUSD || 0)}
                                 </Text>
                             )}
-                            <IconButton
+                            {/* <IconButton
                                 aria-label="User profile"
                                 size="md"
                                 variant="subtle"
@@ -104,7 +104,7 @@ const Header = () => {
                                 onClick={() => router.push('/dashboard')}
                             >
                                 <PiUserBold />
-                            </IconButton>
+                            </IconButton> */}
                             <Button
                                 borderRadius="12px"
                                 size="md"

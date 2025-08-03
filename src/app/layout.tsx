@@ -15,6 +15,11 @@ const inter = Inter({
 export const metadata: Metadata = {
     title: 'Piggy Pot',
     description: 'Piggy Pot',
+    icons: {
+        icon: '/favicon.ico',
+        shortcut: '/favicon.ico',
+        apple: '/favicon.ico',
+    },
 };
 
 export default function RootLayout({

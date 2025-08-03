@@ -31,7 +31,6 @@ export function useBalance(): UseBalanceReturn {
             setState(prev => ({ ...prev, isLoading: true, error: null }));
 
             try {
-                console.log('About to check USE_MOCK condition');
                 if (USE_MOCK_BALANCE) {
                     console.log('Using mock balance data');
                     setState(prev => ({

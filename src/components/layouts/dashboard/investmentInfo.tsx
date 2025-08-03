@@ -8,6 +8,8 @@ import { FaHistory } from 'react-icons/fa';
 import { LoadingComponent } from '@/components/ui/loading';
 import { useEffect, useState } from 'react';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import { useOperations } from '@/hooks/useOperations';
+import { HistoryLayout } from './history';
 
 const HISTORY_MOCK: { date: string; description: string; amount: number }[] = [
     {
@@ -30,7 +32,12 @@ export const InvestmentInfoLayout = () => {
     const router = useRouter();
 
     const { authenticated, ready, user } = useUserContext();
-    const { uniswapValue, isLoading, error, fetchPortfolio } = usePortfolio();
+    const {
+        uniswapValue,
+        isLoading: isInvestmentsLoading,
+        fetchPortfolio,
+    } = usePortfolio();
+    // const { operations, fetchOperations } = useOperations();
 
     const [investedAmount, setInvestedAmount] = useState(0);
 
@@ -41,7 +48,6 @@ export const InvestmentInfoLayout = () => {
     }, [user?.wallet?.address, ready]);
 
     useEffect(() => {
-        console.log('uniswapValue:', uniswapValue);
         setInvestedAmount(uniswapValue || 0);
     }, [uniswapValue]);
 
@@ -95,7 +101,7 @@ export const InvestmentInfoLayout = () => {
                     Total investment
                 </Text>
                 <Text fontSize="84px" fontWeight="900" fontFamily="Inter">
-                    {isLoading || !uniswapValue ? (
+                    {isInvestmentsLoading || !uniswapValue ? (
                         <Spinner size="lg" color="white" px="12px" />
                     ) : (
                         <>
@@ -187,7 +193,6 @@ export const InvestmentInfoLayout = () => {
                 </Flex>
 
                 <Box
-                    maxH="280px"
                     overflowY="auto"
                     css={{
                         '&::-webkit-scrollbar': {
@@ -206,60 +211,7 @@ export const InvestmentInfoLayout = () => {
                         },
                     }}
                 >
-                    <VStack gap={3} w="full" pr={2}>
-                        {HISTORY_MOCK.map((item, index) => (
-                            <Box
-                                key={index}
-                                w="full"
-                                bg="rgba(255, 255, 255, 0.2)"
-                                borderRadius="12px"
-                                p={4}
-                                border="1px solid rgba(255, 255, 255, 0.1)"
-                            >
-                                <Flex
-                                    justify="space-between"
-                                    align="flex-start"
-                                >
-                                    <VStack align="start" gap={1} flex={1}>
-                                        <Text
-                                            fontSize="sm"
-                                            color="gray.200"
-                                            fontFamily="Inter"
-                                        >
-                                            {item.date}
-                                        </Text>
-                                        <Text
-                                            fontSize="md"
-                                            color="white"
-                                            fontFamily="Inter"
-                                        >
-                                            {item.description}
-                                        </Text>
-                                    </VStack>
-
-                                    <Flex align="center" gap={2}>
-                                        <VStack align="end" gap={1}>
-                                            <Text
-                                                fontSize="sm"
-                                                color="gray.200"
-                                                fontFamily="Inter"
-                                            >
-                                                Amount
-                                            </Text>
-                                            <Text
-                                                fontSize="md"
-                                                fontWeight="bold"
-                                                color="white"
-                                                fontFamily="Inter"
-                                            >
-                                                {item.amount}
-                                            </Text>
-                                        </VStack>
-                                    </Flex>
-                                </Flex>
-                            </Box>
-                        ))}
-                    </VStack>
+                    <HistoryLayout />
                 </Box>
             </Box>
         </Flex>

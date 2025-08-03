@@ -1,59 +1,64 @@
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/libs/api/client";
-import { useState, useEffect } from "react";
-import { HistoryResponse } from "@/types/backend/operations";
-import { ApiError } from "@/types/backend/errors";
+// src/hooks/useOperations.ts
+import { useState } from 'react';
+import {
+    OperationsReturn,
+    OperationsState,
+    OperationsResponse,
+} from '@/types/backend/operations';
 
-export const useOperations = (userIdRaw: string) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [response, setResponse] = useState<HistoryResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export const useOperations = (): OperationsReturn => {
+    const [state, setState] = useState<OperationsState>({
+        isLoading: false,
+        error: null,
+        operations: [],
+    });
 
-  const query = useQuery<HistoryResponse, ApiError>({
-    queryKey: ["operations", userIdRaw],
-    queryFn: () =>
-      apiClient.get<HistoryResponse>(`/operations?userIdRaw=${userIdRaw}`),
-    enabled: !!userIdRaw,
-  });
+    const fetchOperations = async (userIdRaw: string): Promise<void> => {
+        try {
+            console.log('Fetching operations for user:', userIdRaw);
+            setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-  useEffect(() => {
-    if (query.isLoading) {
-      setIsLoading(true);
-      setIsFinished(false);
-      setError(null);
-    } else if (query.isSuccess) {
-      setResponse(query.data);
-      setIsFinished(true);
-      setIsLoading(false);
-    } else if (query.isError) {
-      setError(query.error?.message || "Failed to fetch operations");
-      setIsLoading(false);
-      setIsFinished(false);
-    }
-  }, [
-    query.isLoading,
-    query.isSuccess,
-    query.isError,
-    query.data,
-    query.error,
-  ]);
+            const response = await fetch(
+                `/api/operations?userIdRaw=${encodeURIComponent(userIdRaw)}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
 
-  const callOperations = () => {
-    if (userIdRaw) {
-      query.refetch();
-    }
-  };
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-  return {
-    callOperations,
-    isLoading,
-    isFinished,
-    response,
-    error,
-    isPending: query.isPending,
-    isError: query.isError,
-    data: query.data,
-    refetch: query.refetch,
-  };
+            const result = (await response.json()) as OperationsResponse;
+
+            setState(prev => ({
+                ...prev,
+                isLoading: false,
+                operations: result.data || [],
+            }));
+        } catch (error) {
+            console.error('Error fetching operations:', error);
+            setState(prev => ({
+                ...prev,
+                isLoading: false,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to fetch operations',
+            }));
+            throw error;
+        }
+    };
+
+    return {
+        ...state,
+        fetchOperations,
+        isPending: state.isLoading,
+        isError: !!state.error,
+        data: { success: true, data: state.operations },
+        refetch: () => {}, // No refetch functionality for now
+    };
 };

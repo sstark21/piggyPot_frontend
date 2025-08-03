@@ -36,7 +36,7 @@ export const usePortfolio = () => {
         setError(null);
 
         try {
-            const response = await call1inchAPI<PortfolioResponse>(
+            const response = await call1inchAPI<{ result: PortfolioResponse }>(
                 '/portfolio/portfolio/v5.0/general/current_value',
                 {
                     addresses: address,
@@ -44,12 +44,13 @@ export const usePortfolio = () => {
                 }
             );
 
-            const value = response.total || 0;
+            const value = response.result.total || 0;
+
+            console.log('response for Uniswap:', response);
             const uniswapValue =
                 response.result.by_protocol_group?.find(
                     group => group.protocol_group_id === 'uniswapv3'
                 )?.value_usd || 0;
-            console.log('uniswapValue:', uniswapValue, response);
             setPortfolioValue(value);
             setUniswapValue(uniswapValue);
             return value;

@@ -1,31 +1,42 @@
-import { RecommendedPool } from "./pools";
+export interface UpdateOperationData {
+    userIdRaw: string;
+    data: {
+        operationId: string;
+        status: string;
+        recommendedPools: unknown[];
+    };
+}
 
 export interface Operation {
-  operationId: string;
-  userId: string;
-  operationDate: string;
-  investedAmount: number;
-  riskyInvestment: number;
-  nonRiskyInvestment: number;
-  logId: string | null;
-  recommendation: string;
-  profit: number;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  recommendedPools?: RecommendedPool[];
-}
-
-export interface HistoryResponse {
-  success: boolean;
-  data: Operation[];
-}
-
-export interface UpdateOperationData {
-  userIdRaw: string;
-  data: {
     operationId: string;
+    userId: string;
+    operationDate: string;
+    investedAmount: number;
+    riskyInvestment: number;
+    nonRiskyInvestment: number;
+    logId: string;
     status: string;
-    recommendedPools: unknown[];
-  };
+    recommendedPools: unknown;
+    profit: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface OperationsResponse {
+    success: boolean;
+    data: Operation[];
+}
+
+export interface OperationsState {
+    isLoading: boolean;
+    error: string | null;
+    operations: Operation[];
+}
+
+export interface OperationsReturn extends OperationsState {
+    fetchOperations: (userIdRaw: string) => Promise<void>;
+    isPending: boolean;
+    isError: boolean;
+    data: OperationsResponse | null;
+    refetch: () => void;
 }

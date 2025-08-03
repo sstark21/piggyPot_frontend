@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Spinner, Text } from '@chakra-ui/react';
 import { VStack } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import { useUserContext } from '@/components/providers/userProvider';
@@ -11,24 +11,14 @@ import { usePortfolio } from '@/hooks/usePortfolio';
 
 const HISTORY_MOCK: { date: string; description: string; amount: number }[] = [
     {
-        date: '2025-08-02 11:45',
-        description: 'Investment',
-        amount: 5,
+        date: '2025-08-03 12:45',
+        description: 'Invested money',
+        amount: 3.28,
     },
     {
-        date: '2025-08-01 12:00',
-        description: 'Investment',
-        amount: 10,
-    },
-    {
-        date: '2025-08-01 12:00',
-        description: 'Investment',
-        amount: 10,
-    },
-    {
-        date: '2025-08-01 12:00',
-        description: 'Investment',
-        amount: 10,
+        date: '2025-08-01 13:00',
+        description: 'Invested money',
+        amount: 3.28,
     },
 ];
 
@@ -39,7 +29,7 @@ const PROFIT_PERCENTAGE_MOCK = 2.44;
 export const InvestmentInfoLayout = () => {
     const router = useRouter();
 
-    const { authenticated, ready, balanceUSD, user } = useUserContext();
+    const { authenticated, ready, user } = useUserContext();
     const { uniswapValue, isLoading, error, fetchPortfolio } = usePortfolio();
 
     const [investedAmount, setInvestedAmount] = useState(0);
@@ -105,11 +95,17 @@ export const InvestmentInfoLayout = () => {
                     Total investment
                 </Text>
                 <Text fontSize="84px" fontWeight="900" fontFamily="Inter">
-                    <Text as="span">{parts[0]}</Text>
-                    {parts[1] && (
-                        <Text as="span" color="gray.400">
-                            .{parts[1]}
-                        </Text>
+                    {isLoading || !uniswapValue ? (
+                        <Spinner size="lg" color="white" px="12px" />
+                    ) : (
+                        <>
+                            <Text as="span">{parts[0]}</Text>
+                            {parts[1] && (
+                                <Text as="span" color="gray.400">
+                                    .{parts[1]}
+                                </Text>
+                            )}
+                        </>
                     )}
                 </Text>
                 {/* <Flex gap={2} alignItems="center">
@@ -157,7 +153,7 @@ export const InvestmentInfoLayout = () => {
                     fontSize="24px"
                     fontWeight="bold"
                     fontFamily="Inter"
-                    disabled={!balanceUSD}
+                    disabled={!uniswapValue}
                     onClick={() => router.push('/invest')}
                     _hover={{
                         backgroundColor: '#E67EB8',

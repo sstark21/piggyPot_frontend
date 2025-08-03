@@ -9,6 +9,7 @@ import { executeTokensSwaps } from '@/libs/1inch/executeSwaps';
 import { addLiquidityAndMintPosition } from '@/libs/uniswap/addLiquidity';
 import { ethers } from 'ethers';
 import { UniswapTokenAllowanceFunctionsDefinitions } from '@/types/uniswap/allowance';
+import { convertHumanReadableToWei } from '@/utils/converter';
 
 interface Props {
     poolInfo: PoolInfo;
@@ -50,6 +51,13 @@ export const processPoolInvestment = async ({
     const token0AmountUSD = amountToInvestToPool / 2;
     const token1AmountUSD = amountToInvestToPool / 2;
 
+    // This is amount of USDC that will be used to swap USDC to any token in BigInt format
+    // As we have 1 pool and both token should be in equal proportion, this number is the same for swap of both tokens
+    const usdcToSwapPerTokenBigInt = convertHumanReadableToWei(
+        token0AmountUSD,
+        6
+    );
+
     // Convert USD amount per token to a token amount using current prices
     const token0AmountBigInt = convertUSDToTokenAmount(
         token0AmountUSD,
@@ -86,8 +94,7 @@ export const processPoolInvestment = async ({
 
     // Swap USDC to tokens that are needed for the pool
     await executeTokensSwaps({
-        token0AmountBigInt,
-        token1AmountBigInt,
+        usdcToSwapPerTokenBigInt,
         poolInfo,
         walletAddress,
         onProgress,

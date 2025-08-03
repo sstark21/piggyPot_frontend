@@ -157,13 +157,19 @@ export const InvestmentSummary = ({
                     )}
                 </Text>
             </Button>
-
             {/* Error handling */}
             {error && (
                 <Text color="red.500" fontSize="sm" textAlign="center">
                     Error: {defineIssue(error)}
                 </Text>
             )}
+            {/* Progress bar */}
+            <Text fontSize="24px" fontWeight="bold" fontFamily="Inter">
+                {currentStep}
+            </Text>
+            {/* <Text fontSize="24px" fontWeight="bold" fontFamily="Inter">
+                {progress}
+            </Text> */}
 
             {/* Success message */}
             {isCompleted && (
@@ -171,7 +177,6 @@ export const InvestmentSummary = ({
                     Investment completed successfully!
                 </Text>
             )}
-
             {/* Workflow component - only render when processing */}
             {isProcessing && user?.id && (
                 <InvestmentWorkflow

@@ -1,6 +1,14 @@
 'use client';
 
-import { Box, Button, Flex, Image, IconButton, Text } from '@chakra-ui/react';
+import {
+    Box,
+    Button,
+    Flex,
+    Image,
+    IconButton,
+    Text,
+    Spinner,
+} from '@chakra-ui/react';
 import { PiUserBold } from 'react-icons/pi';
 import { formatUSD } from '@/libs/index';
 import { useUserContext } from '@/components/providers/userProvider';
@@ -75,6 +83,10 @@ const Header = () => {
                             fontWeight="bold"
                             fontFamily="Inter"
                             px="12px"
+                            _hover={{
+                                backgroundColor: 'gray.200',
+                            }}
+                            transition="all 0.2s ease-in-out"
                         >
                             Login
                         </Button>
@@ -82,8 +94,8 @@ const Header = () => {
 
                     {ready && authenticated && (
                         <>
-                            {isBalanceLoading ? (
-                                <Text>Loading balance...</Text>
+                            {isBalanceLoading || !balanceUSD ? (
+                                <Spinner size="md" color="white" />
                             ) : (
                                 <Text
                                     fontSize="20px"
@@ -116,6 +128,10 @@ const Header = () => {
                                 fontWeight="bold"
                                 fontFamily="Inter"
                                 px="12px"
+                                _hover={{
+                                    backgroundColor: 'gray.200',
+                                }}
+                                transition="all 0.2s ease-in-out"
                             >
                                 Logout
                             </Button>

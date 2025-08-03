@@ -3,22 +3,49 @@
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Button, Flex, Heading, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { LoadingComponent } from '@/components/ui/loading';
+import { useUserRegistration } from '@/hooks/useUserRegistration';
 
 export default function Home() {
     const { login, ready, authenticated, user } = usePrivy();
     const wallets = useWallets();
     const router = useRouter();
+    const {
+        registerUser,
+        isLoading: isRegistering,
+        error: registrationError,
+    } = useUserRegistration();
+
+    // Use ref to track if we've already attempted registration
+    const hasAttemptedRegistration = useRef(false);
 
     console.log('wallets:', wallets);
     console.log('user:', user);
 
     useEffect(() => {
-        if (ready && authenticated) {
-            router.push('/dashboard');
+        // Only attempt registration once when user is authenticated
+        if (
+            ready &&
+            authenticated &&
+            user?.id &&
+            !hasAttemptedRegistration.current
+        ) {
+            hasAttemptedRegistration.current = true;
+
+            // Register user with backend after successful login
+            registerUser(user.id)
+                .then(() => {
+                    console.log('User registered successfully');
+                    router.push('/dashboard');
+                })
+                .catch(error => {
+                    console.error('Failed to register user:', error);
+                    // Still redirect to dashboard even if registration fails
+                    router.push('/dashboard');
+                });
         }
-    }, [ready, authenticated, router]);
+    }, [ready, authenticated, user?.id, registerUser, router]);
 
     if (!ready) {
         return (
@@ -89,6 +116,10 @@ export default function Home() {
                 fontFamily="Inter"
                 disabled={!ready}
                 onClick={() => login()}
+                _hover={{
+                    backgroundColor: '#E67EB8',
+                }}
+                transition="all 0.2s ease-in-out"
             >
                 <Flex alignItems="center" gap={2}>
                     <Text>Login</Text>

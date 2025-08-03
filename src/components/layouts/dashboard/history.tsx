@@ -1,28 +1,8 @@
 import { Box, Flex, Text, VStack } from '@chakra-ui/react';
 import { useOperations } from '@/hooks/useOperations';
-import { usePrivy } from '@privy-io/react-auth';
 import { useEffect } from 'react';
 import { useUserContext } from '@/components/providers/userProvider';
-
-interface Operation {
-    operationId: string;
-    userId: string;
-    operationDate: string;
-    investedAmount: number;
-    riskyInvestment: number;
-    nonRiskyInvestment: number;
-    logId: string;
-    status: string;
-    recommendedPools: unknown;
-    profit: number;
-    createdAt: string;
-    updatedAt: string;
-}
-
-interface OperationsResponse {
-    success: boolean;
-    data: Operation[];
-}
+import { Operation } from '@/types/backend/operations';
 
 interface HistoryItemProps {
     operation: Operation;

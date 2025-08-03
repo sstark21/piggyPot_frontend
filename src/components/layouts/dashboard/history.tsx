@@ -195,14 +195,6 @@ export const HistoryLayout = () => {
     return (
         <Box w="full">
             <VStack gap={6} align="start" w="full">
-                <Text
-                    fontSize="2xl"
-                    fontWeight="bold"
-                    color="white"
-                    fontFamily="Inter"
-                >
-                    Investment History
-                </Text>
                 <HistoryList operations={operations} />
             </VStack>
         </Box>

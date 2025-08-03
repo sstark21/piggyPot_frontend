@@ -188,7 +188,7 @@ export const InvestmentInfoLayout = () => {
                         }}
                     />
                     <Text fontSize="lg" color="lightgray" fontFamily="Inter">
-                        History
+                        Investment History
                     </Text>
                 </Flex>
 

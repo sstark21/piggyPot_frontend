@@ -77,14 +77,28 @@ export const InvestmentTypes = ({
                             }}
                         />
                     </Button>
-                    <Text
-                        fontSize="40px"
-                        fontWeight="bold"
-                        fontFamily="Inter"
-                        textAlign="center"
+                    <Flex
+                        flexDirection="column"
+                        gap={2}
+                        alignItems="center"
+                        justifyContent="center"
                     >
-                        How much you want to use for risky investments?
-                    </Text>
+                        <Text
+                            fontSize="40px"
+                            fontWeight="bold"
+                            fontFamily="Inter"
+                            textAlign="center"
+                        >
+                            How much you want to use for risky investments?
+                        </Text>
+                        <Text
+                            fontSize="14px"
+                            color="gray.400"
+                            fontFamily="Inter"
+                        >
+                            Put 100% here for a test purpose
+                        </Text>
+                    </Flex>
                 </Flex>
 
                 <Slider.Root
@@ -161,8 +175,7 @@ export const InvestmentTypes = ({
                             What means risky investments?
                         </Box>
                     </Popover.Trigger>
-                    <Popover.Positioner
-                    >
+                    <Popover.Positioner>
                         <Popover.Content
                             bg="gray.800"
                             border="none"
@@ -176,24 +189,23 @@ export const InvestmentTypes = ({
                                     fontFamily="Inter"
                                     lineHeight="1.6"
                                 >
-                                    Risky assets are investment
-                                    opportunities with the potential for
-                                    exceptional returns — but also with a
-                                    heightened risk of volatility and capital
-                                    loss. On our platform, these typically
-                                    involve swap-based strategies with unstable
-                                    liquidity, sudden market shifts, or limited
-                                    historical data.
+                                    Risky assets are investment opportunities
+                                    with the potential for exceptional returns —
+                                    but also with a heightened risk of
+                                    volatility and capital loss. On our
+                                    platform, these typically involve swap-based
+                                    strategies with unstable liquidity, sudden
+                                    market shifts, or limited historical data.
                                     <br />
                                     <br />
-                                    What sets us apart: the
-                                    classification of an asset as high-yield and
-                                    high-risk is not manual — it is the result
-                                    of real-time analysis by an on-chain agent
-                                    that processes a large set of metrics and
-                                    data points. The agent continuously monitors
-                                    market conditions, swap parameters, and
-                                    internal risk indicators to make data-driven
+                                    What sets us apart: the classification of an
+                                    asset as high-yield and high-risk is not
+                                    manual — it is the result of real-time
+                                    analysis by an on-chain agent that processes
+                                    a large set of metrics and data points. The
+                                    agent continuously monitors market
+                                    conditions, swap parameters, and internal
+                                    risk indicators to make data-driven
                                     decisions.
                                 </Text>
                             </Popover.Body>

@@ -35,6 +35,17 @@ export interface OperationsState {
 
 export interface OperationsReturn extends OperationsState {
     fetchOperations: (userIdRaw: string) => Promise<void>;
+    updateOperationStatus: (
+        operationId: string,
+        status:
+            | 'RECOMMENDATION_INIT'
+            | 'RECOMMENDATION_FINISHED'
+            | 'RECOMMENDATION_FAILED'
+            | 'DEPOSIT_INIT'
+            | 'DEPOSIT_FAILED'
+            | 'ACTIVE_INVESTMENT'
+            | 'CLOSED_INVESTMENT'
+    ) => Promise<void>;
     isPending: boolean;
     isError: boolean;
     data: OperationsResponse | null;

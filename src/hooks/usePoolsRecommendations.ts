@@ -1,73 +1,80 @@
-import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
-import { poolsRecommendationsMock } from "@/mocks/recommendations";
-import { RecommendationResponse } from "@/types/backend/pools";
-import { ApiError } from "@/types/backend/errors";
+import { useState } from 'react';
+import { RecommendationResponse } from '@/types/backend/pools';
 
 export const usePoolsRecommendations = (
-  userIdRaw: string,
-  investedAmount: number,
-  riskyInvestment: number,
-  nonRiskyInvestment: number
+    userIdRaw: string,
+    investedAmount: number,
+    riskyInvestment: number,
+    nonRiskyInvestment: number
 ) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [response, setResponse] = useState<RecommendationResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+    const [state, setState] = useState({
+        isLoading: false,
+        isFinished: false,
+        response: null as RecommendationResponse | null,
+        error: null as string | null,
+    });
 
-  const mutation = useMutation<RecommendationResponse, ApiError, void>({
-    mutationFn: async () => {
-      // Mock the API call with mock data
-      console.log("Mocking pool recommendations with:", {
-        userIdRaw,
-        investedAmount,
-        riskyInvestment,
-        nonRiskyInvestment,
-      });
+    const callRecommendations =
+        async (): Promise<RecommendationResponse | null> => {
+            try {
+                setState(prev => ({
+                    ...prev,
+                    isLoading: true,
+                    isFinished: false,
+                    error: null,
+                }));
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+                const response = await fetch('/api/pools/recommendations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userIdRaw,
+                        investedAmount,
+                        riskyInvestment,
+                        nonRiskyInvestment,
+                    }),
+                });
 
-      // Return mock data
-      return poolsRecommendationsMock as RecommendationResponse;
-    },
-    onMutate: () => {
-      setIsLoading(true);
-      setIsFinished(false);
-      setError(null);
-    },
-    onSuccess: (data) => {
-      console.log("Mock data received:", data);
-      setResponse(data);
-      setIsFinished(true);
-      setIsLoading(false);
-    },
-    onError: (error) => {
-      setError(error.message);
-      setIsLoading(false);
-      setIsFinished(false);
-    },
-  });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-  const callRecommendations = async () => {
-    try {
-      const result = await mutation.mutateAsync();
-      console.log("Call recommendations result:", result);
-      return result;
-    } catch (error) {
-      console.error("Call recommendations error:", error);
-      // Error is handled in onError callback
-    }
-  };
+                const result =
+                    (await response.json()) as RecommendationResponse;
 
-  return {
-    callRecommendations,
-    isLoading,
-    isFinished,
-    response: response || mutation.data, // Return either local state or mutation data
-    error,
-    isPending: mutation.isPending,
-    isError: mutation.isError,
-    data: mutation.data,
-  };
+                setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    isFinished: true,
+                    response: result,
+                }));
+
+                return result;
+            } catch (error) {
+                console.error('Call recommendations error:', error);
+                setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    isFinished: false,
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to fetch recommendations',
+                }));
+                throw error;
+            }
+        };
+
+    return {
+        callRecommendations,
+        isLoading: state.isLoading,
+        isFinished: state.isFinished,
+        response: state.response,
+        error: state.error,
+        isPending: state.isLoading,
+        isError: !!state.error,
+        data: state.response,
+    };
 };

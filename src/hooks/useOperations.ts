@@ -6,6 +6,16 @@ import {
     OperationsResponse,
 } from '@/types/backend/operations';
 
+// Define operation status types
+export type OperationStatus =
+    | 'RECOMMENDATION_INIT'
+    | 'RECOMMENDATION_FINISHED'
+    | 'RECOMMENDATION_FAILED'
+    | 'DEPOSIT_INIT'
+    | 'DEPOSIT_FAILED'
+    | 'ACTIVE_INVESTMENT'
+    | 'CLOSED_INVESTMENT';
+
 export const useOperations = (): OperationsReturn => {
     const [state, setState] = useState<OperationsState>({
         isLoading: false,
@@ -53,9 +63,54 @@ export const useOperations = (): OperationsReturn => {
         }
     };
 
+    const updateOperationStatus = async (
+        operationId: string,
+        status: OperationStatus
+    ): Promise<void> => {
+        try {
+            console.log('Updating operation status:', { operationId, status });
+            setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+            const response = await fetch(
+                `/api/operations/update?operationId=${encodeURIComponent(operationId)}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Optionally refresh operations after update
+            // You can call fetchOperations here if needed
+
+            setState(prev => ({
+                ...prev,
+                isLoading: false,
+            }));
+        } catch (error) {
+            console.error('Error updating operation status:', error);
+            setState(prev => ({
+                ...prev,
+                isLoading: false,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to update operation status',
+            }));
+            throw error;
+        }
+    };
+
     return {
         ...state,
         fetchOperations,
+        updateOperationStatus,
         isPending: state.isLoading,
         isError: !!state.error,
         data: { success: true, data: state.operations },

@@ -23,19 +23,19 @@ export const executeTokensSwaps = async ({
     // Swap USDC to tokens that are needed for the pool
     if (token0AmountBigInt > 0) {
         onProgress(`Swapping USDC to ${poolInfo.token0Symbol}...`, 30);
-        // await swapTokens(
-        //     poolInfo.token0,
-        //     token0AmountBigInt.toString(),
-        //     walletAddress
-        // );
+        await swapTokens(
+            poolInfo.token0,
+            token0AmountBigInt.toString(),
+            walletAddress
+        );
     }
 
     if (token1AmountBigInt > 0) {
         onProgress(`Swapping USDC to ${poolInfo.token1Symbol}...`, 30);
-        // await swapTokens(
-        //     poolInfo.token1,
-        //     token1AmountBigInt.toString(),
-        //     walletAddress
-        // );
+        await swapTokens(
+            poolInfo.token1,
+            token1AmountBigInt.toString(),
+            walletAddress
+        );
     }
 };

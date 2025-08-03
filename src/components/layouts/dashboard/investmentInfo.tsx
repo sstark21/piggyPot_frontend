@@ -6,6 +6,7 @@ import { formatUSD } from '@/libs/index';
 import { IoWallet } from 'react-icons/io5';
 import { FaHistory } from 'react-icons/fa';
 import { LoadingComponent } from '@/components/ui/loading';
+import { useEffect } from 'react';
 
 const HISTORY_MOCK: { date: string; description: string; amount: number }[] = [
     {
@@ -30,7 +31,7 @@ const HISTORY_MOCK: { date: string; description: string; amount: number }[] = [
     },
 ];
 
-const TOTAL_INVESTMENT_MOCK = 1127.56;
+const TOTAL_INVESTMENT_MOCK = 0;
 const PROFIT_VALUE_MOCK = 27.56;
 const PROFIT_PERCENTAGE_MOCK = 2.44;
 
@@ -38,8 +39,11 @@ export const InvestmentInfoLayout = () => {
     const router = useRouter();
 
     const { authenticated, ready, balanceUSD } = useUserContext();
-    const formatted = formatUSD(TOTAL_INVESTMENT_MOCK);
-    const parts = formatted.split('.');
+
+    // const formatted = formatUSD(balanceUSD!);
+    const investedAmount = formatUSD(TOTAL_INVESTMENT_MOCK);
+    const parts = investedAmount.split('.');
+
     if (!ready) {
         return (
             <Flex
@@ -55,7 +59,7 @@ export const InvestmentInfoLayout = () => {
     }
 
     // Redirect if not authenticated
-    if (!authenticated) {
+    if (!authenticated && ready) {
         return (
             <Flex
                 flexDirection="column"
@@ -94,7 +98,7 @@ export const InvestmentInfoLayout = () => {
                         </Text>
                     )}
                 </Text>
-                <Flex gap={2} alignItems="center">
+                {/* <Flex gap={2} alignItems="center">
                     <Text
                         fontSize="24px"
                         fontWeight="bold"
@@ -128,7 +132,7 @@ export const InvestmentInfoLayout = () => {
                     >
                         last 24h
                     </Text>
-                </Flex>
+                </Flex> */}
                 <Button
                     height="72px"
                     width="180px"
@@ -141,6 +145,16 @@ export const InvestmentInfoLayout = () => {
                     fontFamily="Inter"
                     disabled={!balanceUSD}
                     onClick={() => router.push('/invest')}
+                    _hover={{
+                        backgroundColor: '#E67EB8',
+                        transform: 'scale(1.05)',
+                        transition: 'all 0.2s ease-in-out',
+                    }}
+                    _active={{
+                        backgroundColor: '#D46A9C',
+                        transform: 'scale(0.98)',
+                    }}
+                    transition="all 0.2s ease-in-out"
                 >
                     <Flex alignItems="center" gap={2}>
                         <Text>Invest</Text>

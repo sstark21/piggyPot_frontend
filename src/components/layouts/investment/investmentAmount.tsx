@@ -17,34 +17,58 @@ export const InvestmentAmount = ({
     onNext: () => void;
     onBack: () => void;
 }) => {
-    const { balanceUSD, isBalanceLoading } = useUserContext();
+    const { balanceUSD, isBalanceLoading, ready } = useUserContext();
     const [inputValue, setInputValue] = useState<string>('');
 
     useEffect(() => {
         if (amount && amount > 0) {
-            setInputValue((amount * 100).toString());
+            setInputValue(amount.toString());
         }
     }, [amount]);
 
     const handleInputChange = (value: string) => {
-        const digitsOnly = value.replace(/\D/g, '');
-        const parsedValue = digitsOnly === '' ? 0 : Number(digitsOnly) || 0;
+        // Remove dollar sign and any non-numeric characters except decimal point
+        const cleanValue = value.replace(/[^\d.]/g, '');
 
-        if (balanceUSD && parsedValue > balanceUSD * 100) {
-            return;
+        // Ensure only one decimal point
+        const parts = cleanValue.split('.');
+        if (parts.length > 2) {
+            return; // More than one decimal point, ignore
         }
 
-        setInputValue(digitsOnly);
-        onAmountChange(parsedValue / 100);
+        // Limit decimal places to 2
+        if (parts.length === 2 && parts[1].length > 2) {
+            return; // Too many decimal places, ignore
+        }
 
-        if (balanceUSD) {
-            setIsAmountExceeded(parsedValue > balanceUSD);
+        // Allow empty string or valid number format
+        if (cleanValue === '' || /^\d*\.?\d*$/.test(cleanValue)) {
+            setInputValue(cleanValue);
+            const parsedValue =
+                cleanValue === '' ? 0 : parseFloat(cleanValue) || 0;
+            onAmountChange(parsedValue);
+
+            if (balanceUSD) {
+                setIsAmountExceeded(parsedValue > balanceUSD);
+            }
         }
     };
 
-    const formatSimpleUSD = (amount: number): string => {
-        return `$${(amount / 100).toFixed(2)}`;
-    };
+    // const formatDisplayValue = (value: string): string => {
+    //     if (!value || value === '0') {
+    //         return '$0';
+    //     }
+
+    //     const numValue = parseFloat(value);
+    //     if (isNaN(numValue)) {
+    //         return '$0';
+    //     }
+
+    //     return `$${numValue.toFixed(2)}`;
+    // };
+
+    console.log('ready: ', ready);
+    console.log('isBalanceLoading: ', isBalanceLoading);
 
     return (
         <Flex
@@ -81,8 +105,8 @@ export const InvestmentAmount = ({
             <Input
                 height="100px"
                 placeholder="$0"
-                disabled={isBalanceLoading}
-                value={formatSimpleUSD(parseInt(inputValue) || 0)}
+                disabled={isBalanceLoading || !ready}
+                value={inputValue ? `$${inputValue}` : ''}
                 onChange={e => handleInputChange(e.target.value)}
                 border="none"
                 borderRadius="16px"
@@ -120,6 +144,10 @@ export const InvestmentAmount = ({
                 fontFamily="Inter"
                 disabled={!inputValue}
                 onClick={onNext}
+                _hover={{
+                    backgroundColor: '#E67EB8',
+                }}
+                transition="all 0.2s ease-in-out"
             >
                 <Text>Continue</Text>
             </Button>

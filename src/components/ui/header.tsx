@@ -7,7 +7,14 @@ import { useUserContext } from '@/components/providers/userProvider';
 import { useRouter } from 'next/navigation';
 
 const Header = () => {
-    const { balanceUSD, isBalanceLoading, logout } = useUserContext();
+    const {
+        balanceUSD,
+        isBalanceLoading,
+        logout,
+        ready,
+        authenticated,
+        login,
+    } = useUserContext();
     const router = useRouter();
     return (
         <Box
@@ -56,46 +63,64 @@ const Header = () => {
                     alignItems="center"
                     justifyContent="center"
                 >
-                    {isBalanceLoading ? (
-                        <Text>Loading balance...</Text>
-                    ) : (
-                        <Text
-                            fontSize="20px"
-                            fontWeight="bold"
-                            fontFamily="Inter"
-                            px="12px"
-                        >
-                            {formatUSD(balanceUSD || 0)}
-                        </Text>
-                    )}
-{/* 
-                    <Button
-                        borderRadius="12px"
-                        size="md"
-                        backgroundColor="white"
-                        color="black"
-                        marginRight="10px"
-                    >
-                        <Text
+                    {ready && !authenticated && (
+                        <Button
+                            borderRadius="12px"
+                            size="md"
+                            backgroundColor="white"
+                            color="black"
+                            marginRight="10px"
+                            onClick={() => login()}
                             fontSize="14px"
                             fontWeight="bold"
                             fontFamily="Inter"
                             px="12px"
                         >
-                            Top Up
-                        </Text>
-                    </Button> */}
-                    <IconButton
-                        aria-label="User profile"
-                        size="md"
-                        variant="subtle"
-                        borderRadius="12px"
-                        backgroundColor="#FCFCFC33"
-                        color="white"
-                        onClick={() => logout()}
-                    >
-                        <PiUserBold />
-                    </IconButton>
+                            Login
+                        </Button>
+                    )}
+
+                    {ready && authenticated && (
+                        <>
+                            {isBalanceLoading ? (
+                                <Text>Loading balance...</Text>
+                            ) : (
+                                <Text
+                                    fontSize="20px"
+                                    fontWeight="bold"
+                                    fontFamily="Inter"
+                                    px="12px"
+                                >
+                                    {formatUSD(balanceUSD || 0)}
+                                </Text>
+                            )}
+                            <IconButton
+                                aria-label="User profile"
+                                size="md"
+                                variant="subtle"
+                                borderRadius="12px"
+                                backgroundColor="#FCFCFC33"
+                                color="white"
+                                onClick={() => router.push('/dashboard')}
+                            >
+                                <PiUserBold />
+                            </IconButton>
+                            <Button
+                                borderRadius="12px"
+                                size="md"
+                                backgroundColor="white"
+                                color="black"
+                                marginRight="10px"
+                                onClick={() => logout()}
+                                fontSize="14px"
+                                fontWeight="bold"
+                                fontFamily="Inter"
+                                px="12px"
+                            >
+                                Logout
+                            </Button>
+                        </>
+                    )}
                 </Box>
             </Flex>
         </Box>

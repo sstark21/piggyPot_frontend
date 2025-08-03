@@ -115,7 +115,7 @@ export const InvestmentSummary = ({
                     fontFamily="Inter"
                     color="gray.300"
                 >
-                    Non-risky assets
+                    to non-risky assets
                 </Text>
             </Box>
             <Box display="flex" flexDirection="column" alignItems="center">
@@ -128,7 +128,7 @@ export const InvestmentSummary = ({
                     fontFamily="Inter"
                     color="gray.300"
                 >
-                    Risky assets
+                    to risky assets
                 </Text>
             </Box>
             <Button
@@ -144,6 +144,10 @@ export const InvestmentSummary = ({
                 fontFamily="Inter"
                 onClick={handleStartInvestment}
                 disabled={!user?.id}
+                _hover={{
+                    backgroundColor: '#E67EB8',
+                }}
+                transition="all 0.2s ease-in-out"
             >
                 <Text>
                     Invest{' '}

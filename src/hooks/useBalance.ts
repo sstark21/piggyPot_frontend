@@ -8,7 +8,7 @@ import {
 } from '@/types/1inch/balance';
 import { convertWeiToHumanReadable } from '@/utils/converter';
 
-const USE_MOCK_BALANCE = true;
+const USE_MOCK_BALANCE = false;
 const MOCK_BALANCE_USD = 1234.56;
 
 export function useBalance(): UseBalanceReturn {

@@ -23,23 +23,23 @@ export const InvestmentTypes = ({
     }) => void;
     onNext: () => void;
     onBack: () => void;
-    }) => {
+}) => {
     const handleSliderChange = ({ value }: { value: number[] }) => {
         console.log('handleSliderChange', value, amountToInvest);
-            const riskyPct = Math.round(value[0] || 0);
-            const conservativePct = 100 - riskyPct;
+        const riskyPct = Math.round(value[0] || 0);
+        const conservativePct = 100 - riskyPct;
 
-            const totalAmount = amountToInvest || 0;
-            const riskyAmount = (totalAmount * riskyPct) / 100;
-            const conservativeAmount = (totalAmount * conservativePct) / 100;
+        const totalAmount = amountToInvest || 0;
+        const riskyAmount = (totalAmount * riskyPct) / 100;
+        const conservativeAmount = (totalAmount * conservativePct) / 100;
 
-            onSharesChange({
-                risky: riskyPct,
-                conservative: conservativePct,
-                riskyAmount: riskyAmount,
-                conservativeAmount: conservativeAmount,
-            });
-        };
+        onSharesChange({
+            risky: riskyPct,
+            conservative: conservativePct,
+            riskyAmount: riskyAmount,
+            conservativeAmount: conservativeAmount,
+        });
+    };
     return (
         <Flex
             gap={6}
@@ -138,6 +138,10 @@ export const InvestmentTypes = ({
                     fontWeight="bold"
                     fontFamily="Inter"
                     onClick={onNext}
+                    _hover={{
+                        backgroundColor: '#E67EB8',
+                    }}
+                    transition="all 0.2s ease-in-out"
                 >
                     <Text>Continue</Text>
                 </Button>

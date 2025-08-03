@@ -1,59 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/libs/api/client";
-import { useState, useEffect } from "react";
-import { HistoryResponse } from "@/types/backend/operations";
-import { ApiError } from "@/types/backend/errors";
+// src/hooks/useOperations.ts
+import { callOperationsAPI } from '@/libs/1inch/callApi';
+import { useCallback, useState } from 'react';
 
-export const useOperations = (userIdRaw: string) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [response, setResponse] = useState<HistoryResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+interface OperationsResponse {
+    operations: Array<{
+        id: string;
+        userIdRaw: string;
+    }>;
+}
 
-  const query = useQuery<HistoryResponse, ApiError>({
-    queryKey: ["operations", userIdRaw],
-    queryFn: () =>
-      apiClient.get<HistoryResponse>(`/operations?userIdRaw=${userIdRaw}`),
-    enabled: !!userIdRaw,
-  });
 
-  useEffect(() => {
-    if (query.isLoading) {
-      setIsLoading(true);
-      setIsFinished(false);
-      setError(null);
-    } else if (query.isSuccess) {
-      setResponse(query.data);
-      setIsFinished(true);
-      setIsLoading(false);
-    } else if (query.isError) {
-      setError(query.error?.message || "Failed to fetch operations");
-      setIsLoading(false);
-      setIsFinished(false);
-    }
-  }, [
-    query.isLoading,
-    query.isSuccess,
-    query.isError,
-    query.data,
-    query.error,
-  ]);
+export const useOperations = () => {
+    const [operations, setOperations] = useState<
+        OperationsResponse['operations']
+    >([]);
 
-  const callOperations = () => {
-    if (userIdRaw) {
-      query.refetch();
-    }
-  };
+    const fetchOperations = useCallback(async (id: string) => {
+        try {
+            const response = await callOperationsAPI<OperationsResponse>({
+                userIdRaw: id,
+            });
+            setOperations(response.operations || []);
+        } catch (error) {
+            console.error(error);
+        }
+    }, []);
 
-  return {
-    callOperations,
-    isLoading,
-    isFinished,
-    response,
-    error,
-    isPending: query.isPending,
-    isError: query.isError,
-    data: query.data,
-    refetch: query.refetch,
-  };
+    return {
+        fetchOperations,
+        operations,
+    };
 };

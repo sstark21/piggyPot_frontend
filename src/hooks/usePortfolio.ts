@@ -49,7 +49,6 @@ export const usePortfolio = () => {
                 response.result.by_protocol_group?.find(
                     group => group.protocol_group_id === 'uniswapv3'
                 )?.value_usd || 0;
-            console.log('uniswapValue:', uniswapValue, response);
             setPortfolioValue(value);
             setUniswapValue(uniswapValue);
             return value;

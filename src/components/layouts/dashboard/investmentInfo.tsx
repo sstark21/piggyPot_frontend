@@ -8,6 +8,7 @@ import { FaHistory } from 'react-icons/fa';
 import { LoadingComponent } from '@/components/ui/loading';
 import { useEffect, useState } from 'react';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import { useOperations } from '@/hooks/useOperations';
 
 const HISTORY_MOCK: { date: string; description: string; amount: number }[] = [
     {
@@ -40,18 +41,19 @@ export const InvestmentInfoLayout = () => {
     const router = useRouter();
 
     const { authenticated, ready, balanceUSD, user } = useUserContext();
-    const { uniswapValue, isLoading, error, fetchPortfolio } = usePortfolio();
+    const { uniswapValue, fetchPortfolio } = usePortfolio();
+    const { operations, fetchOperations } = useOperations();
 
     const [investedAmount, setInvestedAmount] = useState(0);
 
     useEffect(() => {
         if (user?.wallet?.address) {
             fetchPortfolio(user.wallet.address);
+            fetchOperations(user.id);
         }
     }, [user?.wallet?.address, ready]);
 
     useEffect(() => {
-        console.log('uniswapValue:', uniswapValue);
         setInvestedAmount(uniswapValue || 0);
     }, [uniswapValue]);
 

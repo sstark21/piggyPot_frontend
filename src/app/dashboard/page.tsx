@@ -6,10 +6,9 @@ import { useUserContext } from '@/components/providers/userProvider';
 import { LoadingComponent } from '@/components/ui/loading';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePortfolio } from '@/hooks/usePortfolio';
 
 export default function DashboardPage() {
-    const { authenticated, ready, user } = useUserContext();
+    const { authenticated, ready } = useUserContext();
 
     const router = useRouter();
 
